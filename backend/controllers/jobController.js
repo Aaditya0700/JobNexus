@@ -38,21 +38,30 @@ const getJobs = async (req, res, next) => {
       if (maxSalary) query['salary.max'] = { $lte: Number(maxSalary) };
     }
 
-    const skip = (page - 1) * limit;
+    // Clamp pagination to safe bounds
+    const DEFAULT_LIMIT = 10;
+    const MAX_LIMIT = 50;
+    let parsedPage = parseInt(page, 10);
+    if (!Number.isFinite(parsedPage) || parsedPage < 1) parsedPage = 1;
+    let parsedLimit = parseInt(limit, 10);
+    if (!Number.isFinite(parsedLimit) || parsedLimit < 1) parsedLimit = DEFAULT_LIMIT;
+    if (parsedLimit > MAX_LIMIT) parsedLimit = MAX_LIMIT;
+
+    const skip = (parsedPage - 1) * parsedLimit;
     const total = await Job.countDocuments(query);
     const jobs = await Job.find(query)
       .populate('company', 'name logo location')
       .populate('createdBy', 'name')
       .sort(sort)
       .skip(skip)
-      .limit(Number(limit));
+      .limit(parsedLimit);
 
     res.json({
       success: true,
       count: jobs.length,
       total,
-      pages: Math.ceil(total / limit),
-      currentPage: Number(page),
+      pages: Math.ceil(total / parsedLimit),
+      currentPage: parsedPage,
       jobs,
     });
   } catch (error) {

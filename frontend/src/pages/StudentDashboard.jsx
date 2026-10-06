@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
-  Briefcase, Clock, CheckCircle2, XCircle, AlertCircle,
-  Eye, Trash2, Loader2, TrendingUp, BookmarkCheck,
+  Briefcase, Clock, CheckCircle2, XCircle,
+  Eye, Trash2, Loader2, TrendingUp, BookmarkCheck, Sparkles,
+  FileText, ArrowRight,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import API from '../utils/api';
@@ -55,15 +56,25 @@ export default function StudentDashboard() {
   const stats = {
     total: applications.length,
     pending: applications.filter((a) => a.status === 'pending').length,
+    reviewing: applications.filter((a) => a.status === 'reviewing').length,
     shortlisted: applications.filter((a) => a.status === 'shortlisted').length,
     hired: applications.filter((a) => a.status === 'hired').length,
+    rejected: applications.filter((a) => a.status === 'rejected').length,
   };
 
+  const pipelineRows = [
+    { label: 'Pending Review', count: stats.pending, bar: 'bg-yellow-400' },
+    { label: 'Under Review', count: stats.reviewing, bar: 'bg-blue-400' },
+    { label: 'Shortlisted', count: stats.shortlisted, bar: 'bg-purple-400' },
+    { label: 'Hired', count: stats.hired, bar: 'bg-green-500' },
+    { label: 'Not Selected', count: stats.rejected, bar: 'bg-red-400' },
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Welcome */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
           Welcome back, {user?.name?.split(' ')[0]}! 👋
         </h1>
         <p className="text-gray-500 mt-1">Track your job applications and career progress</p>
@@ -77,7 +88,7 @@ export default function StudentDashboard() {
           { label: 'Shortlisted', value: stats.shortlisted, color: 'text-purple-600' },
           { label: 'Hired', value: stats.hired, color: 'text-green-600' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="card text-center">
+          <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
             <p className={`text-3xl font-bold ${color}`}>{value}</p>
             <p className="text-sm text-gray-500 mt-1">{label}</p>
           </div>
@@ -85,9 +96,9 @@ export default function StudentDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <Link to="/jobs" className="card hover:shadow-md transition-shadow flex items-center gap-3 cursor-pointer">
-          <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Link to="/jobs" className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all flex items-center gap-3 p-4">
+          <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center flex-shrink-0">
             <Briefcase className="w-5 h-5 text-primary-600" />
           </div>
           <div>
@@ -95,8 +106,8 @@ export default function StudentDashboard() {
             <p className="text-xs text-gray-500">Find new opportunities</p>
           </div>
         </Link>
-        <Link to="/saved-jobs" className="card hover:shadow-md transition-shadow flex items-center gap-3 cursor-pointer">
-          <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+        <Link to="/saved-jobs" className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all flex items-center gap-3 p-4">
+          <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
             <BookmarkCheck className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
@@ -104,9 +115,9 @@ export default function StudentDashboard() {
             <p className="text-xs text-gray-500">{user?.savedJobs?.length || 0} saved</p>
           </div>
         </Link>
-        <Link to="/profile" className="card hover:shadow-md transition-shadow flex items-center gap-3 cursor-pointer">
-          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-            <CheckCircle2 className="w-5 h-5 text-green-600" />
+        <Link to="/profile" className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all flex items-center gap-3 p-4">
+          <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+            <FileText className="w-5 h-5 text-green-600" />
           </div>
           <div>
             <p className="font-medium text-gray-900">Update Profile</p>
@@ -115,68 +126,154 @@ export default function StudentDashboard() {
             </p>
           </div>
         </Link>
+        <Link to="/resume-analyzer" className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all flex items-center gap-3 p-4">
+          <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-primary-600" />
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">Resume Analyzer</p>
+            <p className="text-xs text-gray-500">
+              {user?.profile?.resumeAnalyzedAt
+                ? `Last run ${format(new Date(user.profile.resumeAnalyzedAt), 'MMM d')}`
+                : 'Get an AI score'}
+            </p>
+          </div>
+        </Link>
       </div>
 
-      {/* Applications List */}
-      <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">My Applications</h2>
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Applications */}
+        <div className="lg:col-span-8 min-w-0">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">My Applications</h2>
+              <span className="text-xs text-gray-400">{stats.total} total</span>
+            </div>
 
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
-          </div>
-        ) : applications.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-4xl mb-3">📋</div>
-            <p className="text-gray-600 font-medium">No applications yet</p>
-            <p className="text-gray-400 text-sm mt-1">Start applying to jobs to track them here</p>
-            <Link to="/jobs" className="btn-primary mt-4 inline-block">Browse Jobs</Link>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {applications.map((app) => {
-              const config = STATUS_CONFIG[app.status] || STATUS_CONFIG.pending;
-              const StatusIcon = config.Icon;
-              return (
-                <div key={app._id} className="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                      {app.job?.company?.logo ? (
-                        <img src={app.job.company.logo} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <Briefcase className="w-5 h-5 text-gray-400" />
-                      )}
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
+              </div>
+            ) : applications.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-14 h-14 rounded-full bg-primary-50 mx-auto flex items-center justify-center text-primary-600 mb-3">
+                  <Briefcase className="w-6 h-6" />
+                </div>
+                <p className="text-gray-600 font-medium">No applications yet</p>
+                <p className="text-gray-400 text-sm mt-1">Start applying to jobs to track them here</p>
+                <Link to="/jobs" className="btn-primary mt-4 inline-block">Browse Jobs</Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {applications.map((app) => {
+                  const config = STATUS_CONFIG[app.status] || STATUS_CONFIG.pending;
+                  const StatusIcon = config.Icon;
+                  return (
+                    <div key={app._id} className="flex items-center justify-between gap-3 p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {app.job?.company?.logo ? (
+                            <img src={app.job.company.logo} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <Briefcase className="w-5 h-5 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <Link to={`/jobs/${app.job?._id}`} className="font-medium text-gray-900 hover:text-primary-600 transition-colors truncate block">
+                            {app.job?.title || 'Job Deleted'}
+                          </Link>
+                          <p className="text-sm text-gray-500">{app.job?.company?.name}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">Applied {format(new Date(app.createdAt), 'MMM d, yyyy')}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <span className={`badge ${config.color} flex items-center gap-1`}>
+                          <StatusIcon className="w-3 h-3" />
+                          {config.label}
+                        </span>
+                        {app.status === 'pending' && (
+                          <button
+                            onClick={() => handleWithdraw(app._id)}
+                            disabled={withdrawing === app._id}
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Withdraw"
+                          >
+                            {withdrawing === app._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <Link to={`/jobs/${app.job?._id}`} className="font-medium text-gray-900 hover:text-primary-600 transition-colors truncate block">
-                        {app.job?.title || 'Job Deleted'}
-                      </Link>
-                      <p className="text-sm text-gray-500">{app.job?.company?.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">Applied {format(new Date(app.createdAt), 'MMM d, yyyy')}</p>
-                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Sidebar */}
+        <aside className="lg:col-span-4 flex flex-col gap-6">
+          {/* Application Pipeline */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Application Pipeline</h3>
+              <span className="text-xs text-gray-400">Live data</span>
+            </div>
+            <div className="space-y-3">
+              {pipelineRows.map((row) => (
+                <div key={row.label}>
+                  <div className="flex items-center justify-between text-sm mb-1">
+                    <span className="text-gray-500">{row.label}</span>
+                    <span className="font-semibold text-gray-900">{row.count}</span>
                   </div>
-
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className={`badge ${config.color} flex items-center gap-1`}>
-                      <StatusIcon className="w-3 h-3" />
-                      {config.label}
-                    </span>
-                    {app.status === 'pending' && (
-                      <button
-                        onClick={() => handleWithdraw(app._id)}
-                        disabled={withdrawing === app._id}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Withdraw"
-                      >
-                        {withdrawing === app._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                      </button>
-                    )}
+                  <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${row.bar} rounded-full transition-all`}
+                      style={{ width: `${stats.total ? Math.max((row.count / stats.total) * 100, row.count > 0 ? 6 : 0) : 0}%` }}
+                    ></div>
                   </div>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        )}
+
+          {/* Resume / Analyzer Status */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Resume Status</h3>
+            {user?.profile?.resumeUrl ? (
+              <div className="space-y-2 text-sm">
+                <p className="flex items-center gap-2 text-green-700">
+                  <CheckCircle2 className="w-4 h-4" /> Resume uploaded
+                </p>
+                {user.profile.resumeAnalyzedAt && (
+                  <p className="text-gray-500">
+                    Last analyzed {format(new Date(user.profile.resumeAnalyzedAt), 'MMM d, yyyy')}
+                  </p>
+                )}
+                <Link to="/resume-analyzer" className="inline-flex items-center gap-1 text-primary-600 font-medium text-sm mt-2 hover:underline">
+                  Open Resume Analyzer <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500">
+                <p>No resume uploaded yet. Upload your resume to unlock AI matching.</p>
+                <Link to="/profile" className="inline-flex items-center gap-1 text-primary-600 font-medium text-sm mt-2 hover:underline">
+                  Go to Profile <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Saved Jobs */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <h3 className="font-semibold text-gray-900 mb-2">Saved Jobs</h3>
+            <p className="text-sm text-gray-500 mb-3">{user?.savedJobs?.length || 0} job{user?.savedJobs?.length === 1 ? '' : 's'} saved for later.</p>
+            <Link to="/saved-jobs" className="inline-flex items-center gap-1 text-primary-600 font-medium text-sm hover:underline">
+              View saved jobs <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </aside>
       </div>
     </div>
   );

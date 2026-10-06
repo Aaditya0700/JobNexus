@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import JobsPage from './pages/JobsPage';
 import JobDetailPage from './pages/JobDetailPage';
+import ExternalJobDetailPage from './pages/ExternalJobDetailPage';
 import StudentDashboard from './pages/StudentDashboard';
 import RecruiterDashboard from './pages/RecruiterDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -16,6 +17,7 @@ import ProfilePage from './pages/ProfilePage';
 import PostJobPage from './pages/PostJobPage';
 import CompanyPage from './pages/CompanyPage';
 import SavedJobsPage from './pages/SavedJobsPage';
+import ResumeAnalyzerPage from './pages/ResumeAnalyzerPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Layout
@@ -43,6 +45,7 @@ const AppRoutes = () => (
         <Route path="/" element={<HomePage />} />
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/jobs/:id" element={<JobDetailPage />} />
+        <Route path="/external-jobs/:externalId" element={<ExternalJobDetailPage />} />
 
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
@@ -54,6 +57,7 @@ const AppRoutes = () => (
         <Route path="/post-job" element={<PrivateRoute roles={['recruiter']}><PostJobPage /></PrivateRoute>} />
         <Route path="/company" element={<PrivateRoute roles={['recruiter']}><CompanyPage /></PrivateRoute>} />
         <Route path="/saved-jobs" element={<PrivateRoute roles={['student']}><SavedJobsPage /></PrivateRoute>} />
+        <Route path="/resume-analyzer" element={<PrivateRoute roles={['student']}><ResumeAnalyzerPage /></PrivateRoute>} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

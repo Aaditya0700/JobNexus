@@ -98,28 +98,29 @@ export default function RecruiterDashboard() {
   const totalApplications = jobs.reduce((acc, j) => acc + (j.applications?.length || 0), 0);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Recruiter Dashboard</h1>
-          <p className="text-gray-500 mt-1">Manage your job postings and applications</p>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Recruiter Dashboard</h1>
+          <p className="text-gray-500 mt-1">Welcome back, {user?.name?.split(' ')[0]} — manage your job postings and applications</p>
         </div>
-        <Link to="/post-job" className="btn-primary flex items-center gap-2">
+        <Link to="/post-job" className="btn-primary flex items-center justify-center gap-2 self-start sm:self-auto">
           <PlusCircle className="w-4 h-4" /> Post Job
         </Link>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="card text-center">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
           <p className="text-3xl font-bold text-gray-900">{jobs.length}</p>
-          <p className="text-sm text-gray-500 mt-1">Active Postings</p>
+          <p className="text-sm text-gray-500 mt-1">Total Postings</p>
         </div>
-        <div className="card text-center">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
           <p className="text-3xl font-bold text-primary-600">{totalApplications}</p>
           <p className="text-sm text-gray-500 mt-1">Total Applications</p>
         </div>
-        <div className="card text-center">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
           <p className="text-3xl font-bold text-green-600">
             {jobs.filter((j) => j.status === 'active').length}
           </p>
@@ -128,8 +129,11 @@ export default function RecruiterDashboard() {
       </div>
 
       {/* Jobs with Applications */}
-      <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">My Job Postings</h2>
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">My Job Postings</h2>
+          <span className="text-xs text-gray-400">{jobs.length} total</span>
+        </div>
 
         {loading ? (
           <div className="flex justify-center py-12">
@@ -137,16 +141,18 @@ export default function RecruiterDashboard() {
           </div>
         ) : jobs.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-4xl mb-3">💼</div>
+            <div className="w-14 h-14 rounded-full bg-primary-50 mx-auto flex items-center justify-center text-primary-600 mb-3">
+              <Briefcase className="w-6 h-6" />
+            </div>
             <p className="text-gray-600 font-medium">No jobs posted yet</p>
             <Link to="/post-job" className="btn-primary mt-4 inline-block">Post Your First Job</Link>
           </div>
         ) : (
           <div className="space-y-3">
             {jobs.map((job) => (
-              <div key={job._id} className="border border-gray-200 rounded-xl overflow-hidden">
+              <div key={job._id} className="border border-gray-100 rounded-xl overflow-hidden">
                 {/* Job Row */}
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-center justify-between gap-3 p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium text-gray-900 truncate">{job.title}</h3>

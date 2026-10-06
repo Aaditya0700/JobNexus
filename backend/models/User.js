@@ -32,6 +32,11 @@ const userSchema = new mongoose.Schema(
       skills: [{ type: String }],
       resumeUrl: { type: String },
       resumeOriginalName: { type: String },
+      resumeAnalysis: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ResumeAnalysis',
+      },
+      resumeAnalyzedAt: { type: Date },
       profilePhoto: {
         type: String,
         default: '',
@@ -56,6 +61,8 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Timestamps of resume analyzer runs, used for the per-user cost guard
+    analysisRunsAt: [{ type: Date, default: [] }],
   },
   { timestamps: true }
 );

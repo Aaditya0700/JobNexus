@@ -16,7 +16,7 @@ const sendEmail = async ({ to, subject, html }) => {
   try {
     const transporter = createTransporter();
     await transporter.sendMail({
-      from: `"Job Portal" <${process.env.EMAIL_USER}>`,
+      from: `"JobNexus" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
@@ -66,7 +66,7 @@ const emailTemplates = {
   }),
 
   welcomeEmail: (name) => ({
-    subject: 'Welcome to Job Portal!',
+    subject: 'Welcome to JobNexus!',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: #4F46E5; padding: 24px; border-radius: 8px 8px 0 0;">

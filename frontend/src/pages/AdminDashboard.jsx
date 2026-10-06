@@ -87,20 +87,20 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
           <Shield className="w-5 h-5 text-red-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Admin Panel</h1>
           <p className="text-gray-500 text-sm">Manage users, jobs and platform activity</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-6 w-fit">
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-6 w-fit max-w-full overflow-x-auto">
         {TABS.map((tab) => (
           <button
             key={tab}

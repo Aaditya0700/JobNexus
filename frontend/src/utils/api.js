@@ -25,4 +25,20 @@ API.interceptors.response.use(
   }
 );
 
+export const externalJobsAPI = {
+  getJobs: (params) => API.get('/external-jobs', { params }),
+  getJob: (externalId) => API.get(`/external-jobs/${externalId}`),
+};
+
+export const savedExternalJobsAPI = {
+  getAll: () => API.get('/saved-external-jobs'),
+  save: (job) => API.post('/saved-external-jobs', job),
+  unsave: (externalJobId) => API.delete(`/saved-external-jobs/${externalJobId}`),
+};
+
+export const jobMatchAPI = {
+  analyzeExternalJob: (externalJobId) => API.post(`/job-match/analyze/external/${externalJobId}`),
+  getExternalJobMatch: (externalJobId) => API.get(`/job-match/external/${externalJobId}`),
+};
+
 export default API;

@@ -1,6 +1,6 @@
-# Job Portal — Full Stack MERN Application
+# JobNexus — AI-Powered Job Discovery & Career Matching
 
-A full-stack job portal built with the MERN stack where students can find and apply for jobs, and recruiters can post and manage job listings.
+JobNexus is an AI-powered job discovery and career matching platform built with the MERN stack, where students can find and apply for jobs, and recruiters can post and manage job listings.
 
 ## 🚀 Features
 

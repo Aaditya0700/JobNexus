@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, MapPin, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 const JOB_TYPES = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Remote', 'Hybrid'];
 const EXP_LEVELS = ['Entry Level', 'Mid Level', 'Senior Level', 'Lead', 'Manager'];
@@ -26,36 +26,6 @@ export default function JobFilters({ filters, onChange, onReset }) {
             <X className="w-3 h-3" /> Clear all
           </button>
         )}
-      </div>
-
-      {/* Keyword */}
-      <div>
-        <label className="text-sm font-medium text-gray-700 block mb-1.5">Keyword</label>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            value={filters.keyword || ''}
-            onChange={(e) => handleChange('keyword', e.target.value)}
-            placeholder="Job title, skills..."
-            className="input-field pl-9"
-          />
-        </div>
-      </div>
-
-      {/* Location */}
-      <div>
-        <label className="text-sm font-medium text-gray-700 block mb-1.5">Location</label>
-        <div className="relative">
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            value={filters.location || ''}
-            onChange={(e) => handleChange('location', e.target.value)}
-            placeholder="City, state..."
-            className="input-field pl-9"
-          />
-        </div>
       </div>
 
       {/* Job Type */}

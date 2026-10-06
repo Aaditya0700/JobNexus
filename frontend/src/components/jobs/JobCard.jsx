@@ -22,7 +22,7 @@ export default function JobCard({ job, onSave, isSaved, showSave = true }) {
   };
 
   return (
-    <div className="card hover:shadow-md transition-shadow group">
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all group p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           {/* Company Logo */}
@@ -35,7 +35,7 @@ export default function JobCard({ job, onSave, isSaved, showSave = true }) {
           </div>
 
           <div className="flex-1 min-w-0">
-            <Link to={`/jobs/${job._id}`} className="font-semibold text-gray-900 hover:text-primary-600 transition-colors line-clamp-1 group-hover:text-primary-600">
+            <Link to={`/jobs/${job._id}`} className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-1 block">
               {job.title}
             </Link>
             <p className="text-sm text-gray-500 mt-0.5">{job.company?.name || 'Unknown Company'}</p>
@@ -87,12 +87,12 @@ export default function JobCard({ job, onSave, isSaved, showSave = true }) {
       {job.skills?.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-3">
           {job.skills.slice(0, 4).map((skill) => (
-            <span key={skill} className="px-2 py-0.5 bg-primary-50 text-primary-700 text-xs rounded-md font-medium">
+            <span key={skill} className="px-2.5 py-1 bg-primary-50 text-primary-700 text-xs rounded-full font-medium">
               {skill}
             </span>
           ))}
           {job.skills.length > 4 && (
-            <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-md">
+            <span className="px-2.5 py-1 bg-gray-100 text-gray-500 text-xs rounded-full">
               +{job.skills.length - 4} more
             </span>
           )}

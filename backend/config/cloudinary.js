@@ -8,12 +8,12 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Resume storage
+// Resume storage (PDF only — the AI Resume Analyzer expects PDF)
 const resumeStorage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'job-portal/resumes',
-    allowed_formats: ['pdf', 'doc', 'docx'],
+    allowed_formats: ['pdf'],
     resource_type: 'raw',
   },
 });
@@ -28,9 +28,23 @@ const profileStorage = new CloudinaryStorage({
   },
 });
 
+const resumeFileFilter = (req, file, cb) => {
+  const isPdf =
+    file.mimetype === 'application/pdf' ||
+    (file.originalname && file.originalname.toLowerCase().endsWith('.pdf'));
+  if (isPdf) {
+    cb(null, true);
+  } else {
+    const error = new Error('Only PDF resume files are allowed.');
+    error.statusCode = 400;
+    cb(error, false);
+  }
+};
+
 const uploadResume = multer({
   storage: resumeStorage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: resumeFileFilter,
 });
 
 const uploadProfile = multer({
