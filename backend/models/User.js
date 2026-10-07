@@ -32,6 +32,8 @@ const userSchema = new mongoose.Schema(
       skills: [{ type: String }],
       resumeUrl: { type: String },
       resumeOriginalName: { type: String },
+      resumeText: { type: String },
+      resumeVersion: { type: String },
       resumeAnalysis: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ResumeAnalysis',

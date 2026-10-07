@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -39,6 +39,11 @@ export const savedExternalJobsAPI = {
 export const jobMatchAPI = {
   analyzeExternalJob: (externalJobId) => API.post(`/job-match/analyze/external/${externalJobId}`),
   getExternalJobMatch: (externalJobId) => API.get(`/job-match/external/${externalJobId}`),
+};
+
+export const trustCheckAPI = {
+  getInternalJobTrust: (jobId) => API.get(`/trust-check/job/${jobId}`),
+  getExternalJobTrust: (externalJobId) => API.get(`/trust-check/external/${externalJobId}`),
 };
 
 export default API;

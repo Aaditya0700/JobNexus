@@ -113,6 +113,8 @@ const uploadResume = async (req, res, next) => {
         $set: {
           'profile.resumeUrl': req.file.path,
           'profile.resumeOriginalName': req.file.originalname,
+          'profile.resumeText': '',
+          'profile.resumeVersion': '',
         },
       },
       { new: true }

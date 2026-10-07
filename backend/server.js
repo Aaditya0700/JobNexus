@@ -45,6 +45,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/resume-analysis', require('./routes/resumeAnalysis'));
 app.use('/api/job-match', require('./routes/jobMatch'));
 app.use('/api/saved-external-jobs', require('./routes/savedExternalJobs'));
+app.use('/api/trust-check', require('./routes/trustCheck'));
 
 // Health check
 app.get('/api/health', (req, res) => {

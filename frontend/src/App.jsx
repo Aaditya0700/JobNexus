@@ -11,7 +11,7 @@ import JobsPage from './pages/JobsPage';
 import JobDetailPage from './pages/JobDetailPage';
 import ExternalJobDetailPage from './pages/ExternalJobDetailPage';
 import StudentDashboard from './pages/StudentDashboard';
-import RecruiterDashboard from './pages/RecruiterDashboard';
+import RecruiterDashboard from './pages/RecruiterDashBoard';
 import AdminDashboard from './pages/AdminDashboard';
 import ProfilePage from './pages/ProfilePage';
 import PostJobPage from './pages/PostJobPage';

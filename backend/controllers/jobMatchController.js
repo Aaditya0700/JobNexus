@@ -1,6 +1,6 @@
 const JobMatchAnalysis = require('../models/JobMatchAnalysis');
 const Job = require('../models/Job');
-const { fetchResumePdf } = require('../services/resumeFetcher');
+const { fetchResumePdf, getResumeText } = require('../services/resumeFetcher');
 const { analyzeJobMatchPdf, normalizeJobMatch, selectJobForMatching } = require('../services/geminiService');
 const { evaluateAiRateLimit, aiRateLimitMessage, recordAiRun } = require('../services/aiRateLimit');
 const { getExternalJobById } = require('../services/adzunaService');
@@ -86,13 +86,14 @@ const analyzeJobMatch = async (req, res, next) => {
       });
     }
 
-    const pdfBuffer = await fetchResumePdf(resumeUrl);
+    // Get resume text (uses cache if available and valid, otherwise downloads and extracts)
+    const { text: resumeText, usedCache, buffer: pdfBuffer } = await getResumeText(req.user, resumeUrl, resumeOriginalName);
 
     // Charged only once the resume is in hand, immediately before the paid
     // call, so a failed download does not cost the user a run
     await recordAiRun(req.user.id, now, recentRuns);
 
-    const { model, analysis: rawAnalysis } = await analyzeJobMatchPdf({ pdfBuffer, job });
+    const { model, analysis: rawAnalysis } = await analyzeJobMatchPdf({ pdfBuffer, resumeText, job });
 
     const analysis = normalizeJobMatch(rawAnalysis);
 
@@ -154,7 +155,8 @@ const analyzeExternalJobMatch = async (req, res, next) => {
       });
     }
 
-    const pdfBuffer = await fetchResumePdf(resumeUrl);
+    // Get resume text (uses cache if available and valid, otherwise downloads and extracts)
+    const { text: resumeText, usedCache, buffer: pdfBuffer } = await getResumeText(req.user, resumeUrl, resumeOriginalName);
 
     await recordAiRun(req.user.id, now, recentRuns);
 
@@ -172,7 +174,7 @@ const analyzeExternalJobMatch = async (req, res, next) => {
       description: job.description,
     };
 
-    const { model, analysis: rawAnalysis } = await analyzeJobMatchPdf({ pdfBuffer, job: jobForMatching });
+    const { model, analysis: rawAnalysis } = await analyzeJobMatchPdf({ pdfBuffer, resumeText, job: jobForMatching });
 
     const analysis = normalizeJobMatch(rawAnalysis);
 

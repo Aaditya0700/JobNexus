@@ -3,6 +3,8 @@ const PDF_SIGNATURE = '%PDF-';
 const MAX_RESUME_BYTES = 5 * 1024 * 1024; // 5MB — matches config/cloudinary.js
 const FETCH_TIMEOUT_MS = 30000;
 
+const { extractTextFromPdf } = require('./pdfTextExtractor');
+
 const badRequest = (message) => Object.assign(new Error(message), { statusCode: 400 });
 const badGateway = (message) => Object.assign(new Error(message), { statusCode: 502 });
 
@@ -58,4 +60,40 @@ const fetchResumePdf = async (resumeUrl) => {
   return buffer;
 };
 
-module.exports = { fetchResumePdf, isPdfBuffer, MAX_RESUME_BYTES };
+// @desc    Download resume PDF and extract text (with cache check done by caller)
+// @route   (internal service) — returns { buffer, text }
+const fetchResumePdfAndText = async (resumeUrl) => {
+  const buffer = await fetchResumePdf(resumeUrl);
+  const text = await extractTextFromPdf(buffer);
+  return { buffer, text };
+};
+
+// @desc    Compute a simple version identifier from resume URL + name for cache invalidation
+const computeResumeVersion = (resumeUrl, resumeOriginalName) => {
+  // Use URL + filename as version — changes when either changes
+  return `${resumeUrl}|${resumeOriginalName || ''}`;
+};
+
+// @desc    Get resume text, using cache if available and valid
+// @route   (internal service) — returns { text, usedCache, buffer?, text? }
+const getResumeText = async (user, resumeUrl, resumeOriginalName) => {
+  const currentVersion = computeResumeVersion(resumeUrl, resumeOriginalName);
+  
+  // Check if cached text is valid for current resume
+  if (user.profile?.resumeText && user.profile?.resumeVersion === currentVersion) {
+    return { text: user.profile.resumeText, usedCache: true };
+  }
+  
+  // Cache miss or invalid — download PDF, extract text
+  const { buffer, text } = await fetchResumePdfAndText(resumeUrl);
+  return { text, usedCache: false, buffer };
+};
+
+module.exports = { 
+  fetchResumePdf, 
+  fetchResumePdfAndText, 
+  getResumeText, 
+  computeResumeVersion,
+  isPdfBuffer, 
+  MAX_RESUME_BYTES 
+};

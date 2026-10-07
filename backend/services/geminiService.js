@@ -329,11 +329,18 @@ const withRetry = async (operation) => {
   throw lastError;
 };
 
-// @desc    Send a resume PDF to Gemini and return the parsed analysis
+// @desc    Send a resume (PDF or text) to Gemini and return the parsed analysis
 // @route   (internal service) — used by resumeAnalysisController
-const analyzeResumePdf = async ({ pdfBuffer, job }) => {
+// If resumeText is provided, sends text instead of PDF (much faster)
+const analyzeResumePdf = async ({ pdfBuffer, resumeText, job }) => {
   const prompt = buildPrompt(job);
-  const base64 = pdfBuffer.toString('base64');
+
+  const parts = resumeText
+    ? [{ text: `RESUME TEXT:\n${resumeText}\n\n---\n\n${prompt}` }]
+    : [
+        { inlineData: { mimeType: PDF_MIME_TYPE, data: pdfBuffer.toString('base64') } },
+        { text: prompt },
+      ];
 
   const { response, model } = await generateStructured({
     model: getModel(),
@@ -341,11 +348,7 @@ const analyzeResumePdf = async ({ pdfBuffer, job }) => {
     contents: [
       {
         role: 'user',
-        parts: [
-          // Google requires a single PDF to be placed before the text prompt
-          { inlineData: { mimeType: PDF_MIME_TYPE, data: base64 } },
-          { text: prompt },
-        ],
+        parts,
       },
     ],
     config: {
@@ -613,11 +616,18 @@ const describeGeminiFailure = (error) => {
   return 'The AI service could not complete the job match. Please try again.';
 };
 
-// @desc    Send a resume PDF plus a target job to Gemini and return the parsed match
+// @desc    Send a resume (PDF or text) plus a target job to Gemini and return the parsed match
 // @route   (internal service) — used by jobMatchController
-const analyzeJobMatchPdf = async ({ pdfBuffer, job }) => {
+// If resumeText is provided, sends text instead of PDF (much faster)
+const analyzeJobMatchPdf = async ({ pdfBuffer, resumeText, job }) => {
   const prompt = buildJobMatchPrompt(job);
-  const base64 = pdfBuffer.toString('base64');
+
+  const parts = resumeText
+    ? [{ text: `RESUME TEXT:\n${resumeText}\n\n---\n\n${prompt}` }]
+    : [
+        { inlineData: { mimeType: PDF_MIME_TYPE, data: pdfBuffer.toString('base64') } },
+        { text: prompt },
+      ];
 
   let response;
   let model;
@@ -628,11 +638,7 @@ const analyzeJobMatchPdf = async ({ pdfBuffer, job }) => {
       contents: [
         {
           role: 'user',
-          parts: [
-            // Google requires a single PDF to be placed before the text prompt
-            { inlineData: { mimeType: PDF_MIME_TYPE, data: base64 } },
-            { text: prompt },
-          ],
+          parts,
         },
       ],
       config: {

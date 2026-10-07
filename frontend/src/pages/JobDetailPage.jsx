@@ -10,6 +10,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import JobMatchAnalysis from '../components/job/JobMatchAnalysis';
+import TrustCheck from '../components/job/TrustCheck';
 
 export default function JobDetailPage() {
   const { id } = useParams();
@@ -226,6 +227,9 @@ export default function JobDetailPage() {
           </form>
         )}
       </section>
+
+      {/* TrustCheck */}
+      <TrustCheck jobId={id} />
 
       {/* Dual Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

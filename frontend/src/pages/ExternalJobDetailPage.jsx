@@ -9,6 +9,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { externalJobsAPI, savedExternalJobsAPI } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import ExternalJobMatchAnalysis from '../components/job/ExternalJobMatchAnalysis';
+import TrustCheck from '../components/job/TrustCheck';
 
 export default function ExternalJobDetailPage() {
   const { externalId } = useParams();
@@ -203,6 +204,9 @@ export default function ExternalJobDetailPage() {
           </p>
         </div>
       </section>
+
+      {/* TrustCheck */}
+      <TrustCheck externalJobId={externalId} isExternal />
 
       {/* Dual Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

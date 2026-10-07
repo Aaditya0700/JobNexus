@@ -1,7 +1,7 @@
 const ResumeAnalysis = require('../models/ResumeAnalysis');
 const Job = require('../models/Job');
 const User = require('../models/User');
-const { fetchResumePdf } = require('../services/resumeFetcher');
+const { fetchResumePdf, getResumeText } = require('../services/resumeFetcher');
 const { analyzeResumePdf, normalizeAnalysis } = require('../services/geminiService');
 const { evaluateAiRateLimit, aiRateLimitMessage, recordAiRun } = require('../services/aiRateLimit');
 
@@ -52,13 +52,14 @@ const analyzeResume = async (req, res, next) => {
       }
     }
 
-    const pdfBuffer = await fetchResumePdf(resumeUrl);
+    // Get resume text (uses cache if available and valid, otherwise downloads and extracts)
+    const { text: resumeText, usedCache, buffer: pdfBuffer } = await getResumeText(req.user, resumeUrl, resumeOriginalName);
 
     // Charged only once the resume is in hand, immediately before the paid call,
     // so a failed download does not cost the user a run
     await recordAiRun(req.user.id, now, recentRuns);
 
-    const { model, analysis: rawAnalysis } = await analyzeResumePdf({ pdfBuffer, job });
+    const { model, analysis: rawAnalysis } = await analyzeResumePdf({ pdfBuffer, resumeText, job });
 
     const analysis = normalizeAnalysis(rawAnalysis, Boolean(job));
 
@@ -84,6 +85,10 @@ const analyzeResume = async (req, res, next) => {
         $set: {
           'profile.resumeAnalysis': saved._id,
           'profile.resumeAnalyzedAt': now,
+          ...(!usedCache && pdfBuffer && {
+            'profile.resumeText': resumeText,
+            'profile.resumeVersion': `${resumeUrl}|${resumeOriginalName || ''}`,
+          }),
         },
       }
     );
