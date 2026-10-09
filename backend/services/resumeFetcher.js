@@ -22,7 +22,8 @@ const assertCloudinaryUrl = (rawUrl) => {
     throw badRequest('Resume file location is not valid. Please re-upload your resume.');
   }
 
-  if (url.protocol !== 'https:' || !url.hostname.endsWith(CLOUDINARY_HOST_SUFFIX)) {
+  const isCloudinaryHost = url.hostname === CLOUDINARY_HOST_SUFFIX || url.hostname.endsWith(`.${CLOUDINARY_HOST_SUFFIX}`);
+  if (url.protocol !== 'https:' || !isCloudinaryHost || url.username || url.password || url.port) {
     throw badRequest('Resume file location is not a valid Cloudinary URL.');
   }
 

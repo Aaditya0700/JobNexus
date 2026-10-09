@@ -91,7 +91,13 @@ const analyzeJobMatch = async (req, res, next) => {
 
     // Charged only once the resume is in hand, immediately before the paid
     // call, so a failed download does not cost the user a run
-    await recordAiRun(req.user.id, now, recentRuns);
+    const recorded = await recordAiRun(req.user.id, now);
+    if (!recorded) {
+      return res.status(429).json({
+        success: false,
+        message: aiRateLimitMessage(limit, 'AI analyses'),
+      });
+    }
 
     const { model, analysis: rawAnalysis } = await analyzeJobMatchPdf({ pdfBuffer, resumeText, job });
 
@@ -158,7 +164,13 @@ const analyzeExternalJobMatch = async (req, res, next) => {
     // Get resume text (uses cache if available and valid, otherwise downloads and extracts)
     const { text: resumeText, usedCache, buffer: pdfBuffer } = await getResumeText(req.user, resumeUrl, resumeOriginalName);
 
-    await recordAiRun(req.user.id, now, recentRuns);
+    const recorded = await recordAiRun(req.user.id, now);
+    if (!recorded) {
+      return res.status(429).json({
+        success: false,
+        message: aiRateLimitMessage(limit, 'AI analyses'),
+      });
+    }
 
     // Convert Adzuna job format to the format expected by selectJobForMatching
     const jobForMatching = {

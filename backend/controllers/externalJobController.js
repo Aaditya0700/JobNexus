@@ -1,4 +1,4 @@
-const { searchJobs } = require('../services/adzunaService');
+const { searchJobs, getExternalJobById } = require('../services/adzunaService');
 
 const getExternalJobs = async (req, res, next) => {
   try {
@@ -10,31 +10,23 @@ const getExternalJobs = async (req, res, next) => {
       success: true,
       source: 'adzuna',
       cached: result.cached,
+      stale: Boolean(result.stale),
       count: result.count,
       page: result.page,
       total: result.total,
-      totalPages: Math.ceil(result.total / (result.count || 1)) || 1,
+      totalPages: Math.ceil(result.total / (result.pageSize || result.count || 1)) || 1,
       jobs: result.jobs,
     });
   } catch (error) {
-    if (error.message.includes('credentials are not configured')) {
-      console.warn('[Adzuna] API credentials not configured');
-      return res.status(503).json({
-        success: false,
-        message: 'External job search is temporarily unavailable. Please try again later.',
-        source: 'adzuna',
-        jobs: [],
-      });
-    }
-    if (error.message.includes('rate limit') || error.message.includes('temporarily unavailable') || error.message.includes('timed out')) {
-      return res.status(503).json({
-        success: false,
-        message: error.message,
-        source: 'adzuna',
-        jobs: [],
-      });
-    }
-    next(error);
+    const unavailable = /credentials are not configured|rate limit|temporarily unavailable|timed out/i.test(error.message || '');
+    console.warn('[Adzuna] External search failed:', unavailable ? 'temporarily unavailable' : 'provider request rejected');
+    return res.status(unavailable ? 503 : 502).json({
+      success: false,
+      message: unavailable
+        ? 'External job search is temporarily unavailable. Please try again shortly.'
+        : 'External job search could not be completed. Please try again shortly.',
+      source: 'adzuna',
+    });
   }
 };
 
@@ -42,9 +34,7 @@ const getExternalJob = async (req, res, next) => {
   try {
     const { externalId } = req.params;
 
-    const result = await searchJobs({ q: '', location: '', page: 1, results_per_page: 50 });
-
-    const job = result.jobs.find((j) => j.externalId === externalId);
+    const job = await getExternalJobById(externalId);
 
     if (!job) {
       return res.status(404).json({ success: false, message: 'External job not found' });
@@ -52,7 +42,14 @@ const getExternalJob = async (req, res, next) => {
 
     res.json({ success: true, job });
   } catch (error) {
-    next(error);
+    const unavailable = /credentials are not configured|rate limit|temporarily unavailable|timed out/i.test(error.message || '');
+    return res.status(unavailable ? 503 : 502).json({
+      success: false,
+      message: unavailable
+        ? 'External job search is temporarily unavailable. Please try again shortly.'
+        : 'External job details could not be loaded. Please try again shortly.',
+      source: 'adzuna',
+    });
   }
 };
 

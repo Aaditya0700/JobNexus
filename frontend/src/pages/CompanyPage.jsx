@@ -156,7 +156,7 @@ export default function CompanyPage() {
 
       {/* Company Header */}
       <div className="card mb-6">
-        <div className="flex items-start gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-4 min-w-0">
           <div className="relative">
             <div className="w-20 h-20 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden">
               {company.logo ? (
@@ -171,7 +171,7 @@ export default function CompanyPage() {
             </label>
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-gray-900">{company.name}</h2>
             <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-500">
               {company.location && (

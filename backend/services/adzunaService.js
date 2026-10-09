@@ -2,6 +2,8 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 const MAX_RESULTS_PER_PAGE = 50;
 const MIN_RESULTS_PER_PAGE = 1;
 const DEFAULT_RESULTS_PER_PAGE = 20;
+const MAX_PROVIDER_ATTEMPTS = 2;
+const PROVIDER_RETRY_DELAY_MS = 500;
 
 const cache = new Map();
 
@@ -17,11 +19,10 @@ const getFromCache = (key) => {
   if (entry && isCacheValid(entry)) {
     return entry.data;
   }
-  if (entry) {
-    cache.delete(key);
-  }
   return null;
 };
+
+const getStaleFromCache = (key) => cache.get(key)?.data || null;
 
 const setCache = (key, data) => {
   cache.set(key, { data, timestamp: Date.now() });
@@ -97,42 +98,39 @@ const fetchFromAdzuna = async (params) => {
   const url = buildAdzunaUrl(params);
   
   // Log URL for debugging (without app_key)
-  const debugUrl = url.replace(ADZUNA_APP_KEY, '***');
-  console.log('[Adzuna] Request URL:', debugUrl);
+  // Do not log the provider URL: it contains both Adzuna credentials.
+  console.log('[Adzuna] Request started', { country: process.env.ADZUNA_COUNTRY || 'in', page: params.page });
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      let errorBody = '';
-      try {
-        errorBody = await response.text();
-      } catch {}
-      
-      console.error('[Adzuna] API Error:', response.status, errorBody || '(no body)');
-      
-      if (response.status === 429) {
-        throw new Error('Adzuna API rate limit exceeded. Please try again later.');
+  let lastError;
+  for (let attempt = 1; attempt <= MAX_PROVIDER_ATTEMPTS; attempt += 1) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('Adzuna API rate limit exceeded. Please try again later.');
+        }
+        if (response.status >= 500) {
+          throw Object.assign(new Error('Adzuna API is temporarily unavailable. Please try again later.'), { retryable: true });
+        }
+        // Never expose the provider response body to the client.
+        throw new Error(`Adzuna API rejected the search (HTTP ${response.status}).`);
       }
-      if (response.status >= 500) {
-        throw new Error('Adzuna API is temporarily unavailable. Please try again later.');
+      return await response.json();
+    } catch (error) {
+      lastError = error;
+      const retryable = error?.retryable || error?.name === 'AbortError' || error?.name === 'TypeError';
+      if (!retryable || attempt === MAX_PROVIDER_ATTEMPTS) {
+        if (error?.name === 'AbortError') throw new Error('Adzuna API request timed out.');
+        throw error;
       }
-      throw new Error(`Adzuna API error: ${response.status} - ${errorBody || 'Bad Request'}`);
+      await new Promise((resolve) => setTimeout(resolve, PROVIDER_RETRY_DELAY_MS * attempt));
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      throw new Error('Adzuna API request timed out.');
-    }
-    throw error;
   }
+  throw lastError;
 };
 
 const searchJobs = async (rawParams) => {
@@ -144,7 +142,14 @@ const searchJobs = async (rawParams) => {
     return { ...cached, cached: true };
   }
 
-  const data = await fetchFromAdzuna(params);
+  let data;
+  try {
+    data = await fetchFromAdzuna(params);
+  } catch (error) {
+    const stale = getStaleFromCache(cacheKey);
+    if (stale) return { ...stale, cached: true, stale: true };
+    throw error;
+  }
 
   const normalizedJobs = (data.results || []).map(normalizeJob);
 
@@ -153,6 +158,7 @@ const searchJobs = async (rawParams) => {
     source: 'adzuna',
     count: normalizedJobs.length,
     page: params.page,
+    pageSize: params.results_per_page,
     total: data.count || 0,
     jobs: normalizedJobs,
   };
@@ -173,6 +179,16 @@ const getCacheStats = () => ({
 // Fetch a single external job by externalId for validation
 // This searches Adzuna with a broad query and finds the job by ID
 const getExternalJobById = async (externalId) => {
+  // Detail pages and trust checks commonly follow a listing response whose
+  // query was filtered. Reuse those exact results before doing a second,
+  // unrelated broad search that may not contain the requested job.
+  const cachedMatch = Array.from(cache.values())
+    .filter(isCacheValid)
+    .reverse()
+    .map((entry) => entry.data?.jobs?.find((job) => job.externalId === externalId))
+    .find(Boolean);
+  if (cachedMatch) return cachedMatch;
+
   // Search with empty query to get a broad set of results
   const params = sanitizeParams({ q: '', location: '', page: 1, results_per_page: 50 });
   const cacheKey = buildCacheKey(params);
@@ -182,17 +198,30 @@ const getExternalJobById = async (externalId) => {
   if (cached) {
     data = cached;
   } else {
-    data = await fetchFromAdzuna(params);
-    const result = {
-      success: true,
-      source: 'adzuna',
-      count: (data.results || []).length,
-      page: params.page,
-      total: data.count || 0,
-      jobs: (data.results || []).map(normalizeJob),
-    };
-    setCache(cacheKey, result);
-    data = result;
+    try {
+      data = await fetchFromAdzuna(params);
+      const result = {
+        success: true,
+        source: 'adzuna',
+        count: (data.results || []).length,
+        page: params.page,
+        pageSize: params.results_per_page,
+        total: data.count || 0,
+        jobs: (data.results || []).map(normalizeJob),
+      };
+      setCache(cacheKey, result);
+      data = result;
+    } catch (error) {
+      data = getStaleFromCache(cacheKey);
+      if (!data) {
+        const staleMatch = Array.from(cache.values())
+          .reverse()
+          .map((entry) => entry.data?.jobs?.find((job) => job.externalId === externalId))
+          .find(Boolean);
+        if (staleMatch) return staleMatch;
+        throw error;
+      }
+    }
   }
 
   const job = data.jobs.find((j) => j.externalId === externalId);
@@ -203,6 +232,7 @@ module.exports = {
   searchJobs,
   clearCache,
   getCacheStats,
+  getStaleFromCache,
   CACHE_TTL_MS,
   getExternalJobById,
 };

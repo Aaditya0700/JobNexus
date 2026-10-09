@@ -67,7 +67,9 @@ const login = async (req, res, next) => {
 // @access  Private
 const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).populate('company').populate('savedJobs');
+    const user = await User.findById(req.user.id)
+      .populate('company')
+      .populate({ path: 'savedJobs', populate: { path: 'company', select: 'name logo location' } });
     res.json({ success: true, user });
   } catch (error) {
     next(error);
@@ -107,6 +109,7 @@ const uploadResume = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please upload a resume file' });
     }
 
+    console.info('[ResumeUpload] stage: profile-save-start');
     const user = await User.findByIdAndUpdate(
       req.user.id,
       {
@@ -120,8 +123,14 @@ const uploadResume = async (req, res, next) => {
       { new: true }
     );
 
+    console.info('[ResumeUpload] stage: profile-save-complete');
+
     res.json({ success: true, message: 'Resume uploaded successfully', user });
   } catch (error) {
+    console.error('[ResumeUpload] stage: profile-save-failed', {
+      name: error.name || 'Error',
+      code: error.code || undefined,
+    });
     next(error);
   }
 };

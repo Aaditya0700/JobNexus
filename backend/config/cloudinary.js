@@ -37,6 +37,7 @@ const resumeFileFilter = (req, file, cb) => {
   } else {
     const error = new Error('Only PDF resume files are allowed.');
     error.statusCode = 400;
+    error.code = 'INVALID_RESUME_TYPE';
     cb(error, false);
   }
 };

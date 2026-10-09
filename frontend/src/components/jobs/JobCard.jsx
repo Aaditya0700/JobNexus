@@ -22,11 +22,11 @@ export default function JobCard({ job, onSave, isSaved, showSave = true }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all group p-5">
+    <div className="card-hover group">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           {/* Company Logo */}
-          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
             {job.company?.logo ? (
               <img src={job.company.logo} alt={job.company.name} className="w-full h-full object-cover" />
             ) : (
@@ -35,18 +35,19 @@ export default function JobCard({ job, onSave, isSaved, showSave = true }) {
           </div>
 
           <div className="flex-1 min-w-0">
-            <Link to={`/jobs/${job._id}`} className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-1 block">
+            <Link to={`/jobs/${job._id}`} className="text-lg font-semibold text-slate-900 group-hover:text-primary-600 transition-colors line-clamp-2 break-anywhere block">
               {job.title}
             </Link>
-            <p className="text-sm text-gray-500 mt-0.5">{job.company?.name || 'Unknown Company'}</p>
+            <p className="text-sm text-slate-500 mt-0.5 truncate">{job.company?.name || 'Unknown Company'}</p>
           </div>
         </div>
 
         {showSave && onSave && (
           <button
             onClick={() => onSave(job._id)}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+            className="icon-button p-2 rounded-lg hover:bg-slate-100 flex-shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
             title={isSaved ? 'Remove from saved' : 'Save job'}
+            aria-label={isSaved ? 'Remove from saved' : 'Save job'}
           >
             {isSaved ? (
               <BookmarkCheck className="w-5 h-5 text-primary-600" />
@@ -66,19 +67,19 @@ export default function JobCard({ job, onSave, isSaved, showSave = true }) {
       </div>
 
       {/* Info */}
-      <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-gray-500">
-        <div className="flex items-center gap-1">
-          <MapPin className="w-4 h-4" />
-          <span>{job.location}</span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-sm text-slate-500">
+        <div className="flex items-center gap-1 min-w-0">
+          <MapPin className="w-4 h-4 flex-shrink-0" />
+          <span className="truncate">{job.location}</span>
         </div>
         {formatSalary(job.salary) && (
           <div className="flex items-center gap-1">
-            
+            <DollarSign className="w-4 h-4 flex-shrink-0" />
             <span>{formatSalary(job.salary)}</span>
           </div>
         )}
-        <div className="flex items-center gap-1 ml-auto">
-          <Clock className="w-4 h-4" />
+        <div className="flex items-center gap-1 sm:ml-auto">
+          <Clock className="w-4 h-4 flex-shrink-0" />
           <span>{formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}</span>
         </div>
       </div>
@@ -100,9 +101,9 @@ export default function JobCard({ job, onSave, isSaved, showSave = true }) {
       )}
 
       {/* Applications count */}
-      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-        <span className="text-xs text-gray-400">{job.applications?.length || 0} applicants</span>
-        <Link to={`/jobs/${job._id}`} className="text-xs font-medium text-primary-600 hover:text-primary-700">
+      <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+        <span className="text-xs text-slate-400">{job.applications?.length || 0} applicants</span>
+        <Link to={`/jobs/${job._id}`} className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors">
           View Details →
         </Link>
       </div>

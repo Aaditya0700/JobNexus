@@ -36,7 +36,7 @@ export default function ExternalJobCard({ job, onAnalyze, analysis, isAnalyzing,
   const hasAnalysis = analysis && typeof analysis.matchPercentage === 'number';
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all group p-5 relative">
+    <div className="card-hover group relative min-w-0">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden relative">
@@ -56,10 +56,10 @@ export default function ExternalJobCard({ job, onAnalyze, analysis, isAnalyzing,
           </div>
 
           <div className="flex-1 min-w-0">
-            <Link to={`/external-jobs/${job.externalId}`} className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-1 block">
+            <Link to={`/external-jobs/${job.externalId}`} className="text-lg font-semibold text-slate-900 group-hover:text-primary-600 transition-colors line-clamp-2 break-anywhere block">
               {job.title}
             </Link>
-            <p className="text-sm text-gray-500 mt-0.5">{job.company}</p>
+            <p className="text-sm text-slate-500 mt-0.5 truncate">{job.company}</p>
           </div>
         </div>
       </div>
@@ -96,20 +96,20 @@ export default function ExternalJobCard({ job, onAnalyze, analysis, isAnalyzing,
       </div>
 
       {job.description && (
-        <p className="mt-3 text-sm text-gray-600 line-clamp-3">
+        <p className="mt-3 text-sm text-slate-600 line-clamp-2 break-anywhere">
           {job.description}
         </p>
       )}
 
-      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-        <span className="text-xs text-gray-400 flex items-center gap-1">
+      <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <span className="text-xs text-slate-400 flex items-center gap-1">
           <ExternalLink className="w-3 h-3" /> Source: Adzuna
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {showSave && onSave && (
             <button
               onClick={onSave}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              className="icon-button p-2 rounded-lg hover:bg-gray-100 min-h-[40px] min-w-[40px] flex items-center justify-center"
               title={isSaved ? 'Remove from saved' : 'Save job'}
             >
               {isSaved ? (

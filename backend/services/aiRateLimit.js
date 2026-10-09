@@ -26,10 +26,31 @@ const evaluateAiRateLimit = (user) => {
 const aiRateLimitMessage = (limit, subject) =>
   `You have reached the limit of ${limit} ${subject} per hour. Please try again later.`;
 
-// Charged immediately before the paid Gemini call so that a rejected job id, a
-// missing resume or a failed download never costs the user a run.
-const recordAiRun = async (userId, now, recentRuns) =>
-  User.updateOne({ _id: userId }, { $set: { analysisRunsAt: [...recentRuns, now] } });
+const recentRunsExpression = (cutoff) => ({
+  $filter: {
+    input: { $ifNull: ['$analysisRunsAt', []] },
+    as: 'run',
+    cond: { $gt: ['$$run', cutoff] },
+  },
+});
+
+// Atomically check the shared hourly cap and record the run. A read followed
+// by $set allowed parallel requests to overwrite one another and all pass the
+// limit. The conditional pipeline update admits only the requests that still
+// fit beneath the cap.
+const recordAiRun = async (userId, now) => {
+  const cutoff = new Date(now.getTime() - RATE_LIMIT_WINDOW_MS);
+  const recentRuns = recentRunsExpression(cutoff);
+  const result = await User.updateOne(
+    {
+      _id: userId,
+      $expr: { $lt: [{ $size: recentRuns }, RATE_LIMIT_MAX] },
+    },
+    [{ $set: { analysisRunsAt: { $concatArrays: [recentRuns, [now]] } } }]
+  );
+
+  return result.modifiedCount === 1;
+};
 
 module.exports = {
   RATE_LIMIT_WINDOW_MS,
@@ -37,4 +58,5 @@ module.exports = {
   evaluateAiRateLimit,
   aiRateLimitMessage,
   recordAiRun,
+  recentRunsExpression,
 };

@@ -16,7 +16,10 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    // A 401 from a protected feature can be expected for anonymous visitors
+    // (for example, AI match history on a public job detail page). Only clear
+    // the session and redirect when this request actually used a bearer token.
+    if (err.response?.status === 401 && err.config?.headers?.Authorization) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';

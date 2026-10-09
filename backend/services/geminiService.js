@@ -13,12 +13,15 @@ const MAX_OUTPUT_TOKENS = 8192;
 const MAX_JOB_DESCRIPTION_CHARS = 4000;
 const MAX_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 2000;
-const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
+// 429 means the provider's request quota/rate limit has been reached. Retrying
+// it from every concurrent request can amplify the quota problem, so leave it
+// for the user-facing rate-limit response instead of automatically retrying.
+const RETRYABLE_STATUS_CODES = new Set([408, 500, 502, 503, 504]);
 
 let client;
 
-const serverError = (message) => Object.assign(new Error(message), { statusCode: 500 });
-const badGateway = (message) => Object.assign(new Error(message), { statusCode: 502 });
+const serverError = (message) => Object.assign(new Error(message), { statusCode: 500, expose: true });
+const badGateway = (message) => Object.assign(new Error(message), { statusCode: 502, expose: true });
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -219,12 +222,17 @@ const parseAnalysisResponse = (response) => {
   }
 };
 
-// Check if an error is a DOMException AbortError (timeout/abort from AbortSignal.timeout)
+// AbortSignal.timeout() rejects with a TimeoutError, while manual cancellation
+// and some SDK transports use AbortError. Treat both as transient timeouts.
 const isAbortError = (error) =>
-  error instanceof DOMException && error.name === 'AbortError';
+  error?.name === 'AbortError' ||
+  error?.name === 'TimeoutError' ||
+  error?.code === 'ABORT_ERR' ||
+  error?.code === 'ETIMEDOUT' ||
+  error?.code === 'ECONNRESET';
 
 const isRetryable = (error) =>
-  RETRYABLE_STATUS_CODES.has(error?.status) || isAbortError(error);
+  RETRYABLE_STATUS_CODES.has(Number(error?.status ?? error?.code)) || isAbortError(error);
 
 const statusOf = (error) => Number(error?.status ?? error?.code) || null;
 
@@ -304,8 +312,8 @@ const generateStructured = async ({ model, contents, config, feature }) => {
   }
 };
 
-// Gemini intermittently returns 503/429 under load. Each attempt costs tokens, so
-// retries are capped at 3 and use a linear backoff. AbortError from our
+// Gemini intermittently returns 503 under load. Each attempt costs tokens, so
+// retries are capped at 3 and use a bounded backoff. AbortError from our
 // AbortSignal.timeout is also treated as a transient failure worth retrying.
 const withRetry = async (operation) => {
   let lastError;
@@ -322,7 +330,9 @@ const withRetry = async (operation) => {
           `[Gemini] request aborted/timeout (attempt ${attempt}/${MAX_ATTEMPTS}); retrying`
         );
       }
-      await sleep(RETRY_BASE_DELAY_MS * attempt);
+      const exponentialDelay = RETRY_BASE_DELAY_MS * (2 ** (attempt - 1));
+      const jitter = Math.floor(Math.random() * RETRY_BASE_DELAY_MS);
+      await sleep(exponentialDelay + jitter);
     }
   }
 
@@ -342,23 +352,30 @@ const analyzeResumePdf = async ({ pdfBuffer, resumeText, job }) => {
         { text: prompt },
       ];
 
-  const { response, model } = await generateStructured({
-    model: getModel(),
-    feature: 'resume-analysis',
-    contents: [
-      {
-        role: 'user',
-        parts,
+  let response;
+  let model;
+  try {
+    ({ response, model } = await generateStructured({
+      model: getModel(),
+      feature: 'resume-analysis',
+      contents: [
+        {
+          role: 'user',
+          parts,
+        },
+      ],
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        responseMimeType: 'application/json',
+        responseJsonSchema: buildResponseSchema(Boolean(job)),
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
       },
-    ],
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
-      responseMimeType: 'application/json',
-      responseJsonSchema: buildResponseSchema(Boolean(job)),
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
-      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-    },
-  });
+    }));
+  } catch (error) {
+    if (error?.statusCode) throw error;
+    throw badGateway(describeGeminiFailure(error));
+  }
 
   // `model` is whichever model actually produced this result, so the existing
   // model field records it without any schema change.
@@ -610,6 +627,9 @@ const describeGeminiFailure = (error) => {
   if (status === 503 || /UNAVAILABLE|high demand/i.test(message)) {
     return 'The AI service is temporarily unavailable. Please try again shortly.';
   }
+  if (isAbortError(error) || /timeout|timed out|aborted/i.test(message)) {
+    return 'The AI service took too long to respond. Please try again shortly.';
+  }
   if (status === 403 || /PERMISSION_DENIED/i.test(message)) {
     return 'The AI service rejected this request.';
   }
@@ -650,6 +670,7 @@ const analyzeJobMatchPdf = async ({ pdfBuffer, resumeText, job }) => {
       },
     }));
   } catch (error) {
+    if (error?.statusCode) throw error;
     throw badGateway(describeGeminiFailure(error));
   }
 
@@ -686,6 +707,8 @@ module.exports = {
   getFallbackModel,
   getModel,
   isTemporaryAvailabilityError,
+  isAbortError,
+  isRetryable,
   normalizeAnalysis,
   // Job match
   analyzeJobMatchPdf,

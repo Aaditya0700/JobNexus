@@ -62,8 +62,8 @@ const ScoreRing = ({ score, size = 'lg' }) => {
           strokeWidth="10"
           strokeLinecap="round"
           strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          className={`${tone.bg} transition-all duration-1000`}
+          style={{ '--score-circumference': circumference, '--score-offset': offset }}
+          className={`${tone.bg} score-ring-progress`}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -233,6 +233,15 @@ export default function JobMatchAnalysis({ jobId }) {
                 Replace with PDF resume
               </Link>
             )}
+            <button
+              type="button"
+              onClick={handleAnalyze}
+              disabled={analyzing || !hasResume || !isPdf}
+              className="btn-secondary inline-flex items-center gap-2 mt-3 px-3 py-1.5 text-sm disabled:opacity-50"
+            >
+              {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {analyzing ? 'Retrying…' : 'Try again'}
+            </button>
           </div>
         </div>
       </div>
@@ -275,8 +284,8 @@ export default function JobMatchAnalysis({ jobId }) {
             disabled={analyzing || !hasResume || !isPdf}
             className="btn-primary w-full sm:w-auto inline-flex items-center gap-2 px-6 py-2.5"
           >
-            <Sparkles className="w-4 h-4" />
-            Analyze My Match
+            {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {analyzing ? 'Analyzing…' : 'Analyze My Match'}
           </button>
         </div>
       </div>

@@ -6,24 +6,24 @@ import { trustCheckAPI } from '../../utils/api';
 const getLevelStyle = (level) => {
   switch (level) {
     case 'high':
-      return { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-700', icon: 'text-emerald-600' };
+      return { bg: 'bg-white', border: 'border-emerald-200', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-700', icon: 'text-emerald-600', iconBg: 'bg-emerald-50', bar: 'bg-emerald-500' };
     case 'moderate':
-      return { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', badge: 'bg-blue-100 text-blue-700', icon: 'text-blue-600' };
+      return { bg: 'bg-white', border: 'border-blue-200', text: 'text-blue-700', badge: 'bg-blue-100 text-blue-700', icon: 'text-blue-600', iconBg: 'bg-blue-50', bar: 'bg-blue-500' };
     case 'review':
-      return { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-700', icon: 'text-amber-600' };
+      return { bg: 'bg-white', border: 'border-amber-200', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-700', icon: 'text-amber-600', iconBg: 'bg-amber-50', bar: 'bg-amber-500' };
     case 'suspicious':
-      return { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', badge: 'bg-red-100 text-red-700', icon: 'text-red-600' };
+      return { bg: 'bg-white', border: 'border-red-200', text: 'text-red-700', badge: 'bg-red-100 text-red-700', icon: 'text-red-600', iconBg: 'bg-red-50', bar: 'bg-red-500' };
     default:
-      return { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-700', badge: 'bg-gray-100 text-gray-700', icon: 'text-gray-600' };
+      return { bg: 'bg-white', border: 'border-slate-200', text: 'text-slate-700', badge: 'bg-slate-100 text-slate-700', icon: 'text-slate-600', iconBg: 'bg-slate-50', bar: 'bg-slate-500' };
   }
 };
 
-const ScoreBar = ({ score }) => {
+const ScoreBar = ({ score, barClass = 'bg-primary-600' }) => {
   const percentage = Math.max(0, Math.min(100, score));
   return (
-    <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+    <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
       <div
-        className="h-full bg-gradient-to-r from-emerald-500 via-blue-500 to-red-500 transition-all duration-500"
+        className={`h-full rounded-full transition-all duration-500 ${barClass}`}
         style={{ width: `${percentage}%` }}
       />
     </div>

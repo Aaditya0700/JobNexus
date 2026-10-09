@@ -17,6 +17,7 @@ export default function ExternalJobDetailPage() {
   const { user } = useAuth();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
@@ -70,12 +71,15 @@ export default function ExternalJobDetailPage() {
   };
 
   const fetchJob = async () => {
+    setLoading(true);
+    setLoadError('');
     try {
       const { data } = await externalJobsAPI.getJob(externalId);
       setJob(data.job);
-    } catch {
-      toast.error('External job not found');
-      navigate('/jobs');
+    } catch (error) {
+      const message = error.response?.data?.message || 'Could not load this external job. Please try again.';
+      setLoadError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -101,12 +105,23 @@ export default function ExternalJobDetailPage() {
     </div>
   );
 
-  if (!job) return null;
+  if (!job) return (
+    <div className="page-shell">
+      <div role="alert" className="card max-w-xl mx-auto text-center">
+        <h1 className="text-lg font-semibold text-slate-900">Unable to load external job</h1>
+        <p className="text-sm text-slate-600 mt-2">{loadError || 'This listing is not available right now.'}</p>
+        <div className="flex justify-center gap-3 mt-5">
+          <button type="button" onClick={fetchJob} disabled={loading} className="btn-primary">{loading ? 'Retrying…' : 'Try again'}</button>
+          <Link to="/jobs" className="btn-secondary">Back to jobs</Link>
+        </div>
+      </div>
+    </div>
+  );
 
   const salaryText = formatSalary(job);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28 lg:pb-8">
+    <div className="page-shell pb-28 lg:pb-8">
       {/* Breadcrumb & Meta Top Strip */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-gray-500">
@@ -132,7 +147,7 @@ export default function ExternalJobDetailPage() {
       </div>
 
       {/* Hero Card */}
-      <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8 relative overflow-hidden mb-6">
+      <section className="bg-white rounded-xl border border-slate-200/80 shadow-card p-6 md:p-8 relative overflow-hidden mb-6">
         <div className="absolute -right-24 -top-24 w-96 h-96 bg-gradient-to-br from-primary-600/10 to-transparent rounded-full blur-3xl pointer-events-none"></div>
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
           <div className="flex items-start gap-4 min-w-0">
@@ -146,7 +161,7 @@ export default function ExternalJobDetailPage() {
               )}
             </div>
             <div className="min-w-0">
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight">{job.title}</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight break-anywhere">{job.title}</h1>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 mt-1.5">
                 <span className="font-semibold text-gray-900">{job.company}</span>
                 <span className="flex items-center gap-1">
@@ -215,7 +230,7 @@ export default function ExternalJobDetailPage() {
           {/* Description */}
           <section className="card">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Job Description</h2>
-            <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">{job.description || 'No description available.'}</p>
+            <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap break-anywhere">{job.description || 'No description available.'}</p>
           </section>
 
           {/* AI Job Match - only for students */}

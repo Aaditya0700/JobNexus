@@ -1,5 +1,6 @@
 const Application = require('../models/Application');
 const Job = require('../models/Job');
+const User = require('../models/User');
 const { sendEmail, emailTemplates } = require('../utils/email');
 
 // @desc    Apply for a job
@@ -43,6 +44,21 @@ const applyForJob = async (req, res, next) => {
       job.company.name
     );
     sendEmail({ to: req.user.email, subject, html });
+
+    // Send recruiter notification email
+    if (job.createdBy) {
+      const recruiter = await User.findById(job.createdBy).select('name email');
+      if (recruiter && recruiter.email && recruiter.email !== req.user.email) {
+        const { subject: recruiterSubject, html: recruiterHtml } = emailTemplates.recruiterNewApplication(
+          recruiter.name,
+          req.user.name,
+          req.user.email,
+          job.title,
+          job.company.name
+        );
+        sendEmail({ to: recruiter.email, subject: recruiterSubject, html: recruiterHtml });
+      }
+    }
 
     res.status(201).json({ success: true, message: 'Applied successfully!', application });
   } catch (error) {

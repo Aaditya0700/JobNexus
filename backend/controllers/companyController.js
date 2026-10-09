@@ -1,5 +1,7 @@
 const Company = require('../models/Company');
 const { cloudinary } = require('../config/cloudinary');
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const COMPANY_UPDATE_FIELDS = ['name', 'description', 'website', 'location', 'industry', 'size'];
 
 // @desc    Register company
 // @route   POST /api/companies
@@ -29,11 +31,11 @@ const getCompanies = async (req, res, next) => {
   try {
     const { search, page = 1, limit = 10 } = req.query;
     const query = {};
-    if (search) query.name = { $regex: search, $options: 'i' };
+    if (search) query.name = { $regex: escapeRegex(search), $options: 'i' };
 
     const total = await Company.countDocuments(query);
     const companies = await Company.find(query)
-      .populate('userId', 'name email')
+      .populate('userId', 'name')
       .sort('-createdAt')
       .skip((page - 1) * limit)
       .limit(Number(limit));
@@ -73,7 +75,14 @@ const updateCompany = async (req, res, next) => {
       req.body.logo = req.file.path;
     }
 
-    company = await Company.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updates = Object.fromEntries(
+      COMPANY_UPDATE_FIELDS
+        .filter((field) => Object.prototype.hasOwnProperty.call(req.body, field))
+        .map((field) => [field, req.body[field]])
+    );
+    if (req.file) updates.logo = req.file.path;
+
+    company = await Company.findByIdAndUpdate(req.params.id, { $set: updates }, { new: true, runValidators: true });
     res.json({ success: true, company });
   } catch (error) {
     next(error);

@@ -2,7 +2,14 @@ const errorHandler = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
 
-  console.error('Error:', err);
+  // Avoid logging provider payloads, connection strings or request config.
+  console.error('[Error]', {
+    name: err.name || 'Error',
+    code: err.code || undefined,
+    statusCode: err.statusCode || undefined,
+    method: req.method,
+    path: req.path,
+  });
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
@@ -28,9 +35,14 @@ const errorHandler = (err, req, res, next) => {
     return res.status(401).json({ success: false, message: 'Invalid token' });
   }
 
-  res.status(err.statusCode || 500).json({
+  const statusCode = err.statusCode || 500;
+  res.status(statusCode).json({
     success: false,
-    message: error.message || 'Internal Server Error',
+    // Only send explicit client-safe messages on non-server errors. Provider
+    // SDK, database and infrastructure messages can contain internals.
+    message: statusCode >= 500
+      ? (err.expose ? error.message : 'An unexpected server error occurred. Please try again later.')
+      : (error.message || 'Request could not be completed.'),
   });
 };
 

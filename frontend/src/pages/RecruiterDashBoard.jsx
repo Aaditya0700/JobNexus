@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
   Briefcase, Users, Eye, Trash2, PlusCircle, Loader2,
@@ -19,9 +19,9 @@ const STATUS_COLORS = {
 
 export default function RecruiterDashboard() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [jobsError, setJobsError] = useState('');
   const [expandedJob, setExpandedJob] = useState(null);
   const [applications, setApplications] = useState({});
   const [loadingApps, setLoadingApps] = useState(null);
@@ -31,11 +31,13 @@ export default function RecruiterDashboard() {
   }, []);
 
   const fetchJobs = async () => {
+    setLoading(true);
+    setJobsError('');
     try {
       const { data } = await API.get('/jobs/my-jobs');
       setJobs(data.jobs);
     } catch {
-      toast.error('Failed to load jobs');
+      setJobsError('Your job postings could not be loaded. Check your connection and retry.');
     } finally {
       setLoading(false);
     }
@@ -98,12 +100,12 @@ export default function RecruiterDashboard() {
   const totalApplications = jobs.reduce((acc, j) => acc + (j.applications?.length || 0), 0);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="page-shell">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Recruiter Dashboard</h1>
-          <p className="text-gray-500 mt-1">Welcome back, {user?.name?.split(' ')[0]} — manage your job postings and applications</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 motion-enter">
+        <div className="min-w-0">
+          <h1 className="page-heading">Recruiter Dashboard</h1>
+          <p className="page-subheading">Welcome back, {user?.name?.split(' ')[0]} — manage your job postings and applications</p>
         </div>
         <Link to="/post-job" className="btn-primary flex items-center justify-center gap-2 self-start sm:self-auto">
           <PlusCircle className="w-4 h-4" /> Post Job
@@ -111,16 +113,16 @@ export default function RecruiterDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 motion-stagger">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-card p-4 text-center">
           <p className="text-3xl font-bold text-gray-900">{jobs.length}</p>
           <p className="text-sm text-gray-500 mt-1">Total Postings</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-card p-4 text-center">
           <p className="text-3xl font-bold text-primary-600">{totalApplications}</p>
           <p className="text-sm text-gray-500 mt-1">Total Applications</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-card p-4 text-center">
           <p className="text-3xl font-bold text-green-600">
             {jobs.filter((j) => j.status === 'active').length}
           </p>
@@ -129,17 +131,26 @@ export default function RecruiterDashboard() {
       </div>
 
       {/* Jobs with Applications */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 motion-enter motion-delay-2">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">My Job Postings</h2>
           <span className="text-xs text-gray-400">{jobs.length} total</span>
         </div>
 
+        {jobsError && (
+          <div role="alert" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 flex flex-wrap items-center justify-between gap-3">
+            <span>{jobsError}{jobs.length ? ' Showing previously loaded postings.' : ''}</span>
+            <button type="button" onClick={fetchJobs} disabled={loading} className="btn-secondary px-3 py-1.5 text-sm">
+              {loading ? 'Retrying…' : 'Retry'}
+            </button>
+          </div>
+        )}
+
         {loading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
           </div>
-        ) : jobs.length === 0 ? (
+        ) : jobs.length === 0 && !jobsError ? (
           <div className="text-center py-12">
             <div className="w-14 h-14 rounded-full bg-primary-50 mx-auto flex items-center justify-center text-primary-600 mb-3">
               <Briefcase className="w-6 h-6" />
@@ -148,11 +159,11 @@ export default function RecruiterDashboard() {
             <Link to="/post-job" className="btn-primary mt-4 inline-block">Post Your First Job</Link>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 motion-stagger">
             {jobs.map((job) => (
               <div key={job._id} className="border border-gray-100 rounded-xl overflow-hidden">
                 {/* Job Row */}
-                <div className="flex items-center justify-between gap-3 p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 hover:bg-slate-50 transition-colors min-w-0">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium text-gray-900 truncate">{job.title}</h3>
@@ -160,7 +171,7 @@ export default function RecruiterDashboard() {
                         {job.status}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-gray-500">
                       <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {job.applications?.length || 0} applicants</span>
                       <span>{job.jobType}</span>
                       <span>{format(new Date(job.createdAt), 'MMM d, yyyy')}</span>
@@ -192,8 +203,8 @@ export default function RecruiterDashboard() {
                     ) : (
                       <div className="space-y-2">
                         {(applications[job._id] || []).map((app) => (
-                          <div key={app._id} className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-100">
-                            <div className="flex items-center gap-3">
+                          <div key={app._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-lg border border-slate-100 min-w-0">
+                            <div className="flex items-center gap-3 min-w-0">
                               <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
                                 {app.applicant?.profile?.profilePhoto ? (
                                   <img src={app.applicant.profile.profilePhoto} className="w-full h-full rounded-full object-cover" alt="" />
@@ -213,7 +224,7 @@ export default function RecruiterDashboard() {
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                               {app.resumeUrl && (
                                 <a href={app.resumeUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="View resume">
                                   <Eye className="w-4 h-4" />

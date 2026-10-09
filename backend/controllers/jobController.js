@@ -2,6 +2,19 @@ const Job = require('../models/Job');
 const Company = require('../models/Company');
 const Application = require('../models/Application');
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const JOB_UPDATE_FIELDS = [
+  'title', 'description', 'requirements', 'responsibilities', 'salary', 'location',
+  'jobType', 'experienceLevel', 'skills', 'openings', 'deadline', 'status',
+];
+
+const pickJobUpdates = (body) => Object.fromEntries(
+  JOB_UPDATE_FIELDS
+    .filter((field) => Object.prototype.hasOwnProperty.call(body, field))
+    .map((field) => [field, body[field]])
+);
+const ALLOWED_SORTS = new Set(['-createdAt', 'createdAt', 'title', '-title', 'salary.min', '-salary.min']);
+
 // @desc    Get all jobs with search & filters
 // @route   GET /api/jobs
 // @access  Public
@@ -27,14 +40,20 @@ const getJobs = async (req, res, next) => {
       query.$text = { $search: keyword };
     }
 
+    // Reject malformed salary filters rather than silently querying with NaN.
+    for (const [label, value] of [['minSalary', minSalary], ['maxSalary', maxSalary]]) {
+      if (value !== undefined && value !== '' && (!Number.isFinite(Number(value)) || Number(value) < 0)) {
+        return res.status(400).json({ success: false, message: `${label} must be a non-negative number` });
+      }
+    }
+
     // Filters
-    if (location) query.location = { $regex: location, $options: 'i' };
+    if (location) query.location = { $regex: escapeRegex(location), $options: 'i' };
     if (jobType) query.jobType = { $in: jobType.split(',') };
     if (experienceLevel) query.experienceLevel = { $in: experienceLevel.split(',') };
     if (skills) query.skills = { $in: skills.split(',') };
     if (minSalary || maxSalary) {
-      query['salary.min'] = {};
-      if (minSalary) query['salary.min'].$gte = Number(minSalary);
+      if (minSalary) query['salary.min'] = { $gte: Number(minSalary) };
       if (maxSalary) query['salary.max'] = { $lte: Number(maxSalary) };
     }
 
@@ -52,7 +71,7 @@ const getJobs = async (req, res, next) => {
     const jobs = await Job.find(query)
       .populate('company', 'name logo location')
       .populate('createdBy', 'name')
-      .sort(sort)
+      .sort(ALLOWED_SORTS.has(sort) ? sort : '-createdAt')
       .skip(skip)
       .limit(parsedLimit);
 
@@ -76,7 +95,7 @@ const getJob = async (req, res, next) => {
   try {
     const job = await Job.findById(req.params.id)
       .populate('company', 'name logo location website description industry size')
-      .populate('createdBy', 'name email');
+      .populate('createdBy', 'name');
 
     if (!job) {
       return res.status(404).json({ success: false, message: 'Job not found' });
@@ -99,7 +118,7 @@ const createJob = async (req, res, next) => {
     }
 
     const job = await Job.create({
-      ...req.body,
+      ...pickJobUpdates(req.body),
       company: company._id,
       createdBy: req.user.id,
     });
@@ -122,7 +141,7 @@ const updateJob = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Not authorized to update this job' });
     }
 
-    job = await Job.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    job = await Job.findByIdAndUpdate(req.params.id, { $set: pickJobUpdates(req.body) }, { new: true, runValidators: true });
     res.json({ success: true, job });
   } catch (error) {
     next(error);

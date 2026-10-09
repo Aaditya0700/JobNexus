@@ -87,14 +87,14 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="page-shell">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex items-center gap-3 mb-8 min-w-0">
         <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
           <Shield className="w-5 h-5 text-red-600" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Admin Panel</h1>
+          <h1 className="page-heading">Admin Panel</h1>
           <p className="text-gray-500 text-sm">Manage users, jobs and platform activity</p>
         </div>
       </div>
@@ -122,7 +122,7 @@ export default function AdminDashboard() {
           ) : (
             <>
               {/* Stat Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 motion-stagger">
                 {[
                   { label: 'Total Users', value: stats?.stats.totalUsers, icon: Users, color: 'bg-blue-100 text-blue-600' },
                   { label: 'Total Jobs', value: stats?.stats.totalJobs, icon: Briefcase, color: 'bg-primary-100 text-primary-600' },
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 motion-stagger">
                 {/* Role Breakdown */}
                 <div className="card">
                   <h3 className="font-semibold text-gray-900 mb-4">User Breakdown</h3>
@@ -207,7 +207,7 @@ export default function AdminDashboard() {
             <select
               value={roleFilter}
               onChange={(e) => { setRoleFilter(e.target.value); }}
-              className="input-field w-40"
+              className="input-field sm:w-40"
             >
               <option value="">All Roles</option>
               <option value="student">Student</option>
@@ -221,7 +221,7 @@ export default function AdminDashboard() {
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary-600" /></div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[640px]">
                 <thead>
                   <tr className="border-b border-gray-100">
                     <th className="text-left py-3 px-2 text-gray-500 font-medium">User</th>
@@ -284,7 +284,7 @@ export default function AdminDashboard() {
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary-600" /></div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[640px]">
                 <thead>
                   <tr className="border-b border-gray-100">
                     <th className="text-left py-3 px-2 text-gray-500 font-medium">Job</th>

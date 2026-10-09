@@ -3,10 +3,38 @@ import API from '../utils/api';
 
 const AuthContext = createContext();
 
+const readStoredValue = (key) => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const removeStoredValue = (key) => {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Storage can be unavailable in restricted browser contexts.
+  }
+};
+
+const readStoredUser = () => {
+  try {
+    const user = JSON.parse(readStoredValue('user') || 'null');
+    return user && typeof user === 'object' ? user : null;
+  } catch {
+    removeStoredValue('user');
+    return null;
+  }
+};
+
+const storedToken = readStoredValue('token');
+
 const initialState = {
-  user: JSON.parse(localStorage.getItem('user')) || null,
-  token: localStorage.getItem('token') || null,
-  loading: false,
+  user: readStoredUser(),
+  token: storedToken || null,
+  loading: Boolean(storedToken),
 };
 
 const authReducer = (state, action) => {
@@ -21,6 +49,11 @@ const authReducer = (state, action) => {
       const updated = { ...state.user, ...action.payload };
       localStorage.setItem('user', JSON.stringify(updated));
       return { ...state, user: updated };
+    case 'AUTH_REFRESH_SUCCESS':
+      localStorage.setItem('user', JSON.stringify(action.payload));
+      return { ...state, user: action.payload, loading: false };
+    case 'AUTH_REFRESH_FAILURE':
+      return { ...state, loading: false };
     case 'LOGOUT':
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -37,23 +70,36 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (state.token) {
       API.get('/auth/me')
-        .then(({ data }) => dispatch({ type: 'UPDATE_USER', payload: data.user }))
-        .catch(() => dispatch({ type: 'LOGOUT' }));
+        .then(({ data }) => dispatch({ type: 'AUTH_REFRESH_SUCCESS', payload: data.user }))
+        .catch((error) => {
+          if (error.response?.status === 401) dispatch({ type: 'LOGOUT' });
+          else dispatch({ type: 'AUTH_REFRESH_FAILURE' });
+        });
     }
   }, []);
 
   const login = async (credentials) => {
     dispatch({ type: 'SET_LOADING', payload: true });
-    const { data } = await API.post('/auth/login', credentials);
-    dispatch({ type: 'LOGIN_SUCCESS', payload: data });
-    return data;
+    try {
+      const { data } = await API.post('/auth/login', credentials);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: data });
+      return data;
+    } catch (error) {
+      dispatch({ type: 'SET_LOADING', payload: false });
+      throw error;
+    }
   };
 
   const register = async (userData) => {
     dispatch({ type: 'SET_LOADING', payload: true });
-    const { data } = await API.post('/auth/register', userData);
-    dispatch({ type: 'LOGIN_SUCCESS', payload: data });
-    return data;
+    try {
+      const { data } = await API.post('/auth/register', userData);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: data });
+      return data;
+    } catch (error) {
+      dispatch({ type: 'SET_LOADING', payload: false });
+      throw error;
+    }
   };
 
   const logout = () => dispatch({ type: 'LOGOUT' });

@@ -35,8 +35,8 @@ const ScoreBar = ({ label, score, hint }) => {
         aria-label={label}
       >
         <div
-          className={`h-full rounded-full ${tone.bar} transition-all duration-700`}
-          style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
+          className={`h-full rounded-full ${tone.bar} score-progress-fill`}
+          style={{ '--score-width': `${Math.max(0, Math.min(100, score))}%` }}
         />
       </div>
       {hint && <p className="text-xs text-gray-400 mt-1.5">{hint}</p>}
@@ -64,8 +64,8 @@ const ScoreRing = ({ score, size = 'lg' }) => {
           strokeWidth="10"
           strokeLinecap="round"
           strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          className={`${tone.ring} transition-all duration-1000`}
+          style={{ '--score-circumference': circumference, '--score-offset': offset }}
+          className={`${tone.ring} score-ring-progress`}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">

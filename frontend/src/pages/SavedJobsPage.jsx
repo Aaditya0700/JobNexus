@@ -70,7 +70,9 @@ export default function SavedJobsPage() {
         </div>
       ) : savedJobs.length === 0 && savedExternalJobs.length === 0 ? (
         <div className="card text-center py-16">
-          <div className="text-5xl mb-4">🔖</div>
+          <div className="w-14 h-14 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center mx-auto mb-4">
+            <BookmarkCheck className="w-7 h-7" />
+          </div>
           <h3 className="text-lg font-semibold text-gray-900">No saved jobs yet</h3>
           <p className="text-gray-500 mt-2">Browse jobs and click the bookmark icon to save them here</p>
           <Link to="/jobs" className="btn-primary mt-4 inline-block">Browse Jobs</Link>
@@ -99,7 +101,7 @@ export default function SavedJobsPage() {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">External Jobs (Adzuna)</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {savedExternalJobs.map((job) => (
-                  <div key={job._id} className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-5">
+                  <div key={job._id} className="card-hover min-w-0">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3 min-w-0">
                         <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">

@@ -70,8 +70,8 @@ export default function ProfilePage() {
       });
       updateUser(data.user);
       toast.success('Resume uploaded!');
-    } catch {
-      toast.error('Failed to upload resume');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to upload resume');
     }
   };
 
@@ -112,11 +112,11 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">My Profile</h1>
+      <h1 className="page-heading mb-6">My Profile</h1>
 
       {/* Profile Header Card */}
       <div className="card mb-6">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 min-w-0">
           {/* Avatar */}
           <div className="relative">
             <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden">
@@ -132,9 +132,9 @@ export default function ProfilePage() {
             </label>
           </div>
 
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">{user?.name}</h2>
-            <p className="text-gray-500 text-sm">{user?.email}</p>
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-slate-900 truncate">{user?.name}</h2>
+            <p className="text-slate-500 text-sm truncate">{user?.email}</p>
             <span className={`badge mt-1 capitalize ${
               user?.role === 'admin' ? 'bg-red-100 text-red-700' :
               user?.role === 'recruiter' ? 'bg-purple-100 text-purple-700' :
@@ -147,7 +147,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-6 w-fit">
+      <div className="flex gap-1 bg-slate-100 p-1 rounded-xl mb-6 w-full sm:w-fit overflow-x-auto">
         {[
           { id: 'profile', label: 'Profile', Icon: User },
           { id: 'resume', label: 'Resume', Icon: FileText },
@@ -236,7 +236,7 @@ export default function ProfilePage() {
           <h3 className="font-semibold text-gray-900 mb-4">Resume</h3>
 
           {user?.profile?.resumeUrl ? (
-            <div className="mb-6 p-4 bg-green-50 rounded-xl border border-green-200 flex items-center justify-between">
+            <div className="mb-6 p-4 bg-green-50 rounded-xl border border-green-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <FileText className="w-8 h-8 text-green-600" />
                 <div>
@@ -250,15 +250,15 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="mb-6 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-              <p className="text-sm text-yellow-700">⚠️ No resume uploaded yet. Upload one to start applying for jobs.</p>
+              <p className="text-sm text-yellow-700">No resume uploaded yet. Upload one to start applying for jobs.</p>
             </div>
           )}
 
           <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors">
             <Upload className="w-8 h-8 text-gray-400 mb-2" />
             <p className="text-sm font-medium text-gray-600">Click to upload resume</p>
-            <p className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX up to 5MB</p>
-            <input type="file" accept=".pdf,.doc,.docx" onChange={handleResumeUpload} className="hidden" />
+              <p className="text-xs text-gray-400 mt-1">PDF up to 5MB</p>
+              <input type="file" accept=".pdf,application/pdf" onChange={handleResumeUpload} className="hidden" />
           </label>
         </div>
       )}

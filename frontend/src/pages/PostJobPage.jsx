@@ -119,8 +119,10 @@ export default function PostJobPage() {
   if (!hasCompany) {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
-        <div className="text-5xl mb-4">🏢</div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Set Up Your Company First</h2>
+        <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center mx-auto mb-4">
+          <Plus className="w-7 h-7" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900 mb-2">Set Up Your Company First</h2>
         <p className="text-gray-500 mb-6">You need to register your company before posting jobs.</p>
         <button onClick={() => navigate('/company')} className="btn-primary">Register Company</button>
       </div>

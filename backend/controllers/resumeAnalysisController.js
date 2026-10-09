@@ -57,7 +57,13 @@ const analyzeResume = async (req, res, next) => {
 
     // Charged only once the resume is in hand, immediately before the paid call,
     // so a failed download does not cost the user a run
-    await recordAiRun(req.user.id, now, recentRuns);
+    const recorded = await recordAiRun(req.user.id, now);
+    if (!recorded) {
+      return res.status(429).json({
+        success: false,
+        message: aiRateLimitMessage(limit, 'resume analyses'),
+      });
+    }
 
     const { model, analysis: rawAnalysis } = await analyzeResumePdf({ pdfBuffer, resumeText, job });
 

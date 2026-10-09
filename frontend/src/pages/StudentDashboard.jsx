@@ -14,7 +14,7 @@ const STATUS_CONFIG = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700', Icon: Clock },
   reviewing: { label: 'Under Review', color: 'bg-blue-100 text-blue-700', Icon: Eye },
   shortlisted: { label: 'Shortlisted', color: 'bg-purple-100 text-purple-700', Icon: TrendingUp },
-  hired: { label: 'Hired 🎉', color: 'bg-green-100 text-green-700', Icon: CheckCircle2 },
+  hired: { label: 'Hired', color: 'bg-green-100 text-green-700', Icon: CheckCircle2 },
   rejected: { label: 'Not Selected', color: 'bg-red-100 text-red-700', Icon: XCircle },
 };
 
@@ -71,24 +71,24 @@ export default function StudentDashboard() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="page-shell">
       {/* Welcome */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-          Welcome back, {user?.name?.split(' ')[0]}! 👋
+      <div className="mb-8 motion-enter">
+        <h1 className="page-heading">
+          Welcome back, {user?.name?.split(' ')[0]}
         </h1>
-        <p className="text-gray-500 mt-1">Track your job applications and career progress</p>
+        <p className="page-subheading">Track your job applications and career progress</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8 motion-stagger">
         {[
           { label: 'Total Applied', value: stats.total, color: 'text-gray-900' },
           { label: 'Pending', value: stats.pending, color: 'text-yellow-600' },
           { label: 'Shortlisted', value: stats.shortlisted, color: 'text-purple-600' },
           { label: 'Hired', value: stats.hired, color: 'text-green-600' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+          <div key={label} className="bg-white rounded-xl border border-slate-200/80 shadow-card p-4 text-center">
             <p className={`text-3xl font-bold ${color}`}>{value}</p>
             <p className="text-sm text-gray-500 mt-1">{label}</p>
           </div>
@@ -96,8 +96,8 @@ export default function StudentDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Link to="/jobs" className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all flex items-center gap-3 p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 motion-stagger">
+        <Link to="/jobs" className="card-hover flex items-center gap-3 p-4 min-w-0">
           <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center flex-shrink-0">
             <Briefcase className="w-5 h-5 text-primary-600" />
           </div>
@@ -106,7 +106,7 @@ export default function StudentDashboard() {
             <p className="text-xs text-gray-500">Find new opportunities</p>
           </div>
         </Link>
-        <Link to="/saved-jobs" className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all flex items-center gap-3 p-4">
+        <Link to="/saved-jobs" className="card-hover flex items-center gap-3 p-4 min-w-0">
           <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
             <BookmarkCheck className="w-5 h-5 text-indigo-600" />
           </div>
@@ -115,7 +115,7 @@ export default function StudentDashboard() {
             <p className="text-xs text-gray-500">{user?.savedJobs?.length || 0} saved</p>
           </div>
         </Link>
-        <Link to="/profile" className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all flex items-center gap-3 p-4">
+        <Link to="/profile" className="card-hover flex items-center gap-3 p-4 min-w-0">
           <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
             <FileText className="w-5 h-5 text-green-600" />
           </div>
@@ -126,7 +126,7 @@ export default function StudentDashboard() {
             </p>
           </div>
         </Link>
-        <Link to="/resume-analyzer" className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all flex items-center gap-3 p-4">
+        <Link to="/resume-analyzer" className="card-hover flex items-center gap-3 p-4 min-w-0">
           <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center flex-shrink-0">
             <Sparkles className="w-5 h-5 text-primary-600" />
           </div>
@@ -142,7 +142,7 @@ export default function StudentDashboard() {
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start motion-stagger">
         {/* Applications */}
         <div className="lg:col-span-8 min-w-0">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
@@ -170,7 +170,7 @@ export default function StudentDashboard() {
                   const config = STATUS_CONFIG[app.status] || STATUS_CONFIG.pending;
                   const StatusIcon = config.Icon;
                   return (
-                    <div key={app._id} className="flex items-center justify-between gap-3 p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-colors">
+                    <div key={app._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors min-w-0">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                           {app.job?.company?.logo ? (
@@ -180,7 +180,7 @@ export default function StudentDashboard() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <Link to={`/jobs/${app.job?._id}`} className="font-medium text-gray-900 hover:text-primary-600 transition-colors truncate block">
+                          <Link to={`/jobs/${app.job?._id}`} className="font-medium text-gray-900 hover:text-primary-600 transition-colors line-clamp-2 break-anywhere block">
                             {app.job?.title || 'Job Deleted'}
                           </Link>
                           <p className="text-sm text-gray-500">{app.job?.company?.name}</p>

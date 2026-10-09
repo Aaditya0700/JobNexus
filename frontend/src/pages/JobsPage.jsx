@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Loader2, SlidersHorizontal, X, Briefcase, Globe, Search, MapPin } from 'lucide-react';
@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import JobCard from '../components/jobs/JobCard';
 import ExternalJobCard from '../components/jobs/ExternalJobCard';
 import JobFilters from '../components/jobs/JobFilters';
+import { isJobSaved } from '../utils/jobState';
+import { getPaginationItems } from '../utils/pagination';
 
 export default function JobsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -15,6 +17,10 @@ export default function JobsPage() {
   const [externalJobs, setExternalJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [externalLoading, setExternalLoading] = useState(false);
+  const [internalError, setInternalError] = useState('');
+  const [externalError, setExternalError] = useState('');
+  const internalRequestId = useRef(0);
+  const externalRequestId = useRef(0);
   const [pagination, setPagination] = useState({ total: 0, pages: 1, current: 1 });
   const [externalPagination, setExternalPagination] = useState({ total: 0, pages: 1, current: 1 });
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -35,7 +41,9 @@ export default function JobsPage() {
   });
 
   const fetchInternalJobs = useCallback(async (page = 1) => {
+    const requestId = ++internalRequestId.current;
     setLoading(true);
+    setInternalError('');
     try {
       const params = { page, limit: 12 };
       if (filters.keyword) params.keyword = filters.keyword;
@@ -46,17 +54,21 @@ export default function JobsPage() {
       if (filters.maxSalary) params.maxSalary = filters.maxSalary;
 
       const { data } = await API.get('/jobs', { params });
+      if (requestId !== internalRequestId.current) return;
       setJobs(data.jobs);
       setPagination({ total: data.total, pages: data.pages, current: data.currentPage });
     } catch {
-      toast.error('Failed to load jobs');
+      if (requestId !== internalRequestId.current) return;
+      setInternalError('Internal jobs could not be loaded. Check your connection and retry.');
     } finally {
-      setLoading(false);
+      if (requestId === internalRequestId.current) setLoading(false);
     }
   }, [filters]);
 
   const fetchExternalJobs = useCallback(async (page = 1) => {
+    const requestId = ++externalRequestId.current;
     setExternalLoading(true);
+    setExternalError('');
     try {
       const params = {
         page,
@@ -67,20 +79,19 @@ export default function JobsPage() {
       };
 
       const { data } = await externalJobsAPI.getJobs(params);
+      if (requestId !== externalRequestId.current) return;
       setExternalJobs(data.jobs);
+      setExternalError(data.stale ? 'Adzuna is temporarily unavailable.' : '');
       setExternalPagination({
         total: data.total,
         pages: data.totalPages || Math.ceil(data.total / 12) || 1,
         current: data.page,
       });
     } catch (error) {
-      if (error.response?.status !== 503) {
-        toast.error('Failed to load external jobs');
-      }
-      setExternalJobs([]);
-      setExternalPagination({ total: 0, pages: 1, current: 1 });
+      if (requestId !== externalRequestId.current) return;
+      setExternalError(error.response?.data?.message || 'External jobs could not be loaded. Check your connection and retry.');
     } finally {
-      setExternalLoading(false);
+      if (requestId === externalRequestId.current) setExternalLoading(false);
     }
   }, [filters]);
 
@@ -233,7 +244,7 @@ export default function JobsPage() {
   const pageEnd = Math.min(pageStart + currentJobs.length - 1, currentPagination.total);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="page-shell">
       {/* Discovery Header */}
       <section className="mb-6">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6">
@@ -246,7 +257,7 @@ export default function JobsPage() {
               <span className="text-gray-300">•</span>
               <span className="text-xs text-gray-500">{totalListings.toLocaleString()} listings indexed</span>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Explore Opportunities</h1>
+            <h1 className="page-heading">Explore Opportunities</h1>
             <p className="text-gray-500 text-sm mt-1 max-w-2xl">
               Search verified listings across partner companies and external global job indexes powered by Adzuna.
             </p>
@@ -260,7 +271,7 @@ export default function JobsPage() {
         </div>
 
         {/* Search Command Bar */}
-        <div className="bg-white rounded-xl p-2 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-2 shadow-card border border-slate-200/80">
           <form
             onSubmit={(e) => e.preventDefault()}
             className="flex flex-col lg:flex-row items-stretch gap-2"
@@ -317,7 +328,7 @@ export default function JobsPage() {
 
       {/* Source Segment Tabs */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl overflow-x-auto" role="tablist">
+        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto max-w-full" role="tablist">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -344,11 +355,41 @@ export default function JobsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* PRIMARY FEED */}
         <div className="lg:col-span-8 flex flex-col gap-4 min-w-0">
-          {currentLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+          {[
+            ...(activeTab !== 'external' && internalError ? [{ source: 'internal', message: internalError }] : []),
+            ...(activeTab !== 'internal' && externalError ? [{ source: 'external', message: externalError }] : []),
+          ].map(({ source, message }) => (
+            <div key={source} role="alert" className="card border-amber-200 bg-amber-50 text-sm text-amber-900 flex flex-wrap items-center justify-between gap-3">
+              <span>{message}{source === 'external' && externalJobs.length ? ' Showing previously loaded results.' : ''}{source === 'internal' && jobs.length ? ' Showing previously loaded results.' : ''}</span>
+              <button
+                type="button"
+                onClick={() => source === 'internal' ? fetchInternalJobs(1) : fetchExternalJobs(1)}
+                className="btn-secondary px-3 py-1.5 text-sm"
+              >
+                Retry
+              </button>
             </div>
-          ) : currentJobs.length === 0 ? (
+          ))}
+          {currentLoading ? (
+            <div className="flex flex-col gap-4" aria-busy="true" aria-label="Loading jobs">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="card space-y-3">
+                  <div className="flex gap-3">
+                    <div className="skeleton w-12 h-12 rounded-xl" />
+                    <div className="flex-1 space-y-2">
+                      <div className="skeleton h-5 w-2/3" />
+                      <div className="skeleton h-4 w-1/3" />
+                    </div>
+                  </div>
+                  <div className="skeleton h-4 w-full" />
+                  <div className="skeleton h-4 w-4/5" />
+                </div>
+              ))}
+            </div>
+          ) : currentJobs.length === 0 && !(
+            (activeTab !== 'external' && internalError) ||
+            (activeTab !== 'internal' && externalError)
+          ) ? (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
               <div className="w-16 h-16 rounded-full bg-primary-50 mx-auto flex items-center justify-center text-primary-600 mb-4">
                 <Search className="w-7 h-7" />
@@ -384,7 +425,7 @@ export default function JobsPage() {
                     key={job._id}
                     job={job}
                     onSave={user?.role === 'student' ? handleSaveJob : null}
-                    isSaved={user?.savedJobs?.includes(job._id)}
+                    isSaved={isJobSaved(user?.savedJobs, job._id)}
                     showSave={user?.role === 'student'}
                   />
                 )
@@ -404,18 +445,24 @@ export default function JobsPage() {
                     >
                       Previous
                     </button>
-                    {Array.from({ length: currentPagination.pages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => handlePageChange(page)}
-                        className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                          page === currentPagination.current
-                            ? 'bg-primary-600 text-white'
-                            : 'text-gray-600 hover:bg-gray-100'
-                        }`}
-                      >
-                        {page}
-                      </button>
+                    {getPaginationItems(currentPagination.pages, currentPagination.current).map((item) => (
+                      typeof item === 'number' ? (
+                        <button
+                          key={item}
+                          onClick={() => handlePageChange(item)}
+                          aria-current={item === currentPagination.current ? 'page' : undefined}
+                          aria-label={`Page ${item}`}
+                          className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                            item === currentPagination.current
+                              ? 'bg-primary-600 text-white'
+                              : 'text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      ) : (
+                        <span key={item} aria-hidden="true" className="px-1 text-gray-400">…</span>
+                      )
                     ))}
                     <button
                       onClick={() => handlePageChange(currentPagination.current + 1)}
@@ -480,7 +527,7 @@ export default function JobsPage() {
       {showMobileFilters && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileFilters(false)} />
-          <div className="absolute right-0 top-0 h-full w-80 max-w-[85vw] bg-white overflow-y-auto p-4">
+          <div className="absolute right-0 top-0 h-full w-80 max-w-[85vw] bg-white overflow-y-auto p-4 shadow-dropdown">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">Filters</h3>
               <button onClick={() => setShowMobileFilters(false)}><X className="w-5 h-5" /></button>

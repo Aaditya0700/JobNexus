@@ -11,6 +11,7 @@ import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import JobMatchAnalysis from '../components/job/JobMatchAnalysis';
 import TrustCheck from '../components/job/TrustCheck';
+import { isJobSaved } from '../utils/jobState';
 
 export default function JobDetailPage() {
   const { id } = useParams();
@@ -96,13 +97,13 @@ export default function JobDetailPage() {
   );
   if (!job) return null;
 
-  const isSaved = user?.savedJobs?.includes(id);
+  const isSaved = isJobSaved(user?.savedJobs, id);
   const salaryText = job.salary?.min
     ? `₹${(job.salary.min / 100000).toFixed(1)}L${job.salary.max ? ` - ₹${(job.salary.max / 100000).toFixed(1)}L` : '+'}`
     : null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28 lg:pb-8">
+    <div className="page-shell pb-28 lg:pb-8">
       {/* Breadcrumbs & Meta Top Strip */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-gray-500">
@@ -129,7 +130,7 @@ export default function JobDetailPage() {
       </div>
 
       {/* Hero Card */}
-      <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 md:p-8 relative overflow-hidden mb-6">
+      <section className="bg-white rounded-xl border border-slate-200/80 shadow-card p-6 md:p-8 relative overflow-hidden mb-6">
         <div className="absolute -right-24 -top-24 w-96 h-96 bg-gradient-to-br from-primary-600/10 to-transparent rounded-full blur-3xl pointer-events-none"></div>
         <div className="flex flex-col lg:flex-row items-start justify-between gap-6 relative z-10">
           <div className="flex items-start gap-4 max-w-3xl min-w-0">
@@ -142,7 +143,7 @@ export default function JobDetailPage() {
             </div>
             <div className="min-w-0">
               <p className="text-sm font-medium text-gray-500 mb-1">{job.company?.name}</p>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">{job.title}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight break-anywhere">{job.title}</h1>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-gray-500 mt-2">
                 <span className="flex items-center gap-1">
                   <MapPin className="w-4 h-4" /> {job.location}
@@ -238,7 +239,7 @@ export default function JobDetailPage() {
           {/* Description */}
           <section className="card">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Job Description</h2>
-            <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">{job.description}</p>
+            <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap break-anywhere">{job.description}</p>
           </section>
 
           {/* Requirements */}
@@ -346,7 +347,7 @@ export default function JobDetailPage() {
 
       {/* Sticky Bottom Quick-Apply Bar (Mobile/Tablet) */}
       {user?.role === 'student' && !applied && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-lg px-4 py-3 flex items-center justify-between gap-3 lg:hidden">
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg px-4 py-3 flex items-center justify-between gap-3 lg:hidden safe-area">
           <div className="flex flex-col min-w-0">
             <span className="font-bold text-gray-900 truncate">{salaryText || job.title}</span>
             <span className="text-xs text-gray-500 truncate">{job.company?.name} • Direct Apply</span>

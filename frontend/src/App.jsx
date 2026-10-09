@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { Loader2 } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Pages
@@ -25,7 +26,10 @@ import Navbar from './components/shared/Navbar';
 import Footer from './components/shared/Footer';
 
 const PrivateRoute = ({ children, roles }) => {
-  const { user, token } = useAuth();
+  const { user, token, loading } = useAuth();
+  if (loading) {
+    return <div className="flex flex-1 items-center justify-center py-20" role="status" aria-label="Checking session"><Loader2 className="w-7 h-7 animate-spin text-primary-600" /></div>;
+  }
   if (!token) return <Navigate to="/login" replace />;
   if (roles && !roles.includes(user?.role)) return <Navigate to="/" replace />;
   return children;
@@ -38,9 +42,9 @@ const PublicRoute = ({ children }) => {
 };
 
 const AppRoutes = () => (
-  <div className="min-h-screen flex flex-col">
+  <div className="min-h-screen flex flex-col bg-slate-50 overflow-x-clip">
     <Navbar />
-    <main className="flex-1">
+    <main className="flex-1 min-w-0 w-full">
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/jobs" element={<JobsPage />} />
@@ -70,7 +74,18 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            className: 'text-sm',
+            style: {
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 10px 30px rgba(15, 23, 42, 0.12)',
+            },
+          }}
+        />
         <AppRoutes />
       </BrowserRouter>
     </AuthProvider>
